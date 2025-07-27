@@ -38,6 +38,11 @@ export class ApiService {
       // Suno API 응답을 MusicGenerationResult 형태로 변환
       const sunoData = response.data.data[0]; // 첫 번째 생성된 음악 선택
       
+      // 만약 processing 상태라면 완료될 때까지 폴링
+      if (sunoData.status === 'processing') {
+        return await this.pollForCompletion(sunoData.id, geminiPrompt, formData.duration);
+      }
+      
       return {
         prompt: geminiPrompt, // Gemini가 생성한 프롬프트 유지
         audioUrl: sunoData.audio_url,
@@ -49,6 +54,46 @@ export class ApiService {
       console.error('Error generating music:', error);
       throw new ApiError('Failed to generate music', (error as any)?.response?.status);
     }
+  }
+
+  // 음악 생성 완료를 위한 폴링 함수
+  static async pollForCompletion(taskId: string, prompt: string, duration: number): Promise<MusicGenerationResult> {
+    const maxAttempts = 30; // 5분 최대 대기 (10초 간격)
+    const pollInterval = 10000; // 10초 간격
+    
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        // 10초 대기
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
+        
+        // 상태 확인
+        const statusResponse = await api.get(`/api/suno-result/${taskId}`);
+        
+        if (statusResponse.data.success && statusResponse.data.data) {
+          const result = statusResponse.data.data;
+          
+          if (result.status === 'completed' && result.audio_url) {
+            return {
+              prompt: prompt,
+              audioUrl: result.audio_url,
+              title: result.title || 'AI Generated Music',
+              duration: result.duration || duration,
+              imageUrl: result.image_url
+            };
+          } else if (result.status === 'failed') {
+            throw new ApiError('Music generation failed on server');
+          }
+          // processing 상태면 계속 대기
+        }
+      } catch (error) {
+        console.warn(`Polling attempt ${attempt + 1} failed:`, error);
+        if (attempt === maxAttempts - 1) {
+          throw new ApiError('Music generation timeout - please try again');
+        }
+      }
+    }
+    
+    throw new ApiError('Music generation timeout - please try again');
   }
 
   static async checkMusicStatus(id: string): Promise<SunoResponse> {

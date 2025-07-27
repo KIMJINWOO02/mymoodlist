@@ -74,7 +74,7 @@ export default function HomePage() {
 
       // Generate prompt with Gemini
       const prompt = await ApiService.generatePrompt(formData);
-      setLoadingMessage('AI가 음악을 생성하고 있습니다...');
+      setLoadingMessage('AI가 음악을 생성하고 있습니다... (약 2-3분 소요)');
 
       // Generate music with Suno using Gemini's prompt
       const result = await ApiService.generateMusic(formData, prompt);

@@ -52,10 +52,23 @@ export const LoadingState: React.FC<LoadingStateProps> = ({ message }) => {
           </p>
           <div className="bg-gradient-to-r from-amber-600/25 to-orange-600/25 backdrop-blur-sm rounded-2xl p-8 border border-amber-400/35">
             <p className="text-amber-200 font-medium leading-relaxed">
-              🎵 AI가 당신의 감정을 깊이 분석하고 있습니다...
+              🎵 {message.includes('약 2-3분') ? '실제 AI 음악이 생성되고 있습니다!' : 'AI가 당신의 감정을 깊이 분석하고 있습니다...'}
               <br />
-              <span className="text-amber-100/90">잠시만 기다려주세요. 최고의 음악을 만들어드릴게요!</span>
+              <span className="text-amber-100/90">
+                {message.includes('약 2-3분') 
+                  ? '고품질 음원 제작 중이므로 잠시만 기다려주세요. 데모가 아닌 진짜 음악을 만들고 있어요!' 
+                  : '잠시만 기다려주세요. 최고의 음악을 만들어드릴게요!'}
+              </span>
             </p>
+            {message.includes('약 2-3분') && (
+              <div className="mt-6 bg-orange-500/20 border border-orange-400/50 rounded-xl p-4">
+                <p className="text-orange-200 text-sm font-medium">
+                  ⏰ 실제 AI 생성으로 약 2-3분이 소요됩니다
+                  <br />
+                  <span className="text-orange-100/80">완료 후 고품질 음원을 제공해드립니다</span>
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>

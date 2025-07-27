@@ -130,24 +130,14 @@ export async function POST(request: NextRequest) {
         name: sunoError instanceof Error ? sunoError.name : undefined
       });
       
-      // Suno AI 실패시 데모 음악으로 폴백
-      const demoResult = await SunoService.generateDemoFallback(prompt, duration);
+      // Suno AI 실패시 에러 반환 (데모 폴백 제거)
       
       return corsResponse({
-        success: true,
-        message: 'Music generation completed with demo fallback',
-        provider: 'demo',
-        warning: 'Using demo audio - Suno API failed',
-        errorDetails: sanitizeErrorMessage(sunoError),
-        data: [{
-          id: demoResult.id,
-          title: sanitizeInput(demoResult.title || 'Generated Music'),
-          audio_url: demoResult.audio_url,
-          image_url: demoResult.image_url,
-          status: demoResult.status,
-          duration: demoResult.duration
-        }]
-      }, 200, origin || undefined);
+        success: false,
+        error: 'Music generation failed',
+        details: 'Suno AI service is currently unavailable. Please try again later.',
+        errorDetails: sanitizeErrorMessage(sunoError)
+      }, 500, origin || undefined);
     }
     
   } catch (error) {
