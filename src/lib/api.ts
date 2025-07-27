@@ -38,10 +38,7 @@ export class ApiService {
       // Suno API 응답을 MusicGenerationResult 형태로 변환
       const sunoData = response.data.data[0]; // 첫 번째 생성된 음악 선택
       
-      // 만약 processing 상태라면 완료될 때까지 폴링
-      if (sunoData.status === 'processing') {
-        return await this.pollForCompletion(sunoData.id, geminiPrompt, formData.duration);
-      }
+      // 서버에서 이미 폴링 완료 - 클라이언트 폴링 제거됨
       
       return {
         prompt: geminiPrompt, // Gemini가 생성한 프롬프트 유지
@@ -218,7 +215,7 @@ export class SunoService {
       prompt: prompt,
       customMode: true,      // SunoAPI.org 필수 파라미터
       instrumental: false,
-      wait_audio: false,     // 비동기로 시작
+      wait_audio: true,      // 동기적으로 완료까지 대기
       model: 'V3_5',        // SunoAPI.org 지원 모델명
       callBackUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/suno-callback` // 더미 URL (폴링 사용)
     };
@@ -245,54 +242,93 @@ export class SunoService {
     const result = await response.json();
     console.log('✅ SunoAPI.org raw response:', result);
 
-    // SunoAPI.org 응답 형식 처리
-    if (result.code === 200 && result.data && result.data.taskId) {
-      // 비동기 작업 시작 성공 - taskId 받음
-      const taskId = result.data.taskId;
-      console.log('✅ Music generation started, taskId:', taskId);
+    // SunoAPI.org 응답 형식 처리 (wait_audio: true로 완성된 음악 반환)
+    if (result.code === 200 && result.data) {
+      console.log('✅ Music generation completed synchronously');
       
-      // taskId로 상태 확인 및 완료 대기
-      return await this.waitForMusicCompletion(taskId, prompt, duration);
+      // 완성된 음악 데이터 확인
+      if (Array.isArray(result.data) && result.data.length > 0) {
+        const musicData = result.data[0];
+        return {
+          id: musicData.id || 'sync-' + Date.now(),
+          title: musicData.title || 'AI Generated Music',
+          audio_url: musicData.audio_url || musicData.audioUrl,
+          image_url: musicData.image_url || musicData.imageUrl,
+          status: 'complete',
+          prompt: prompt,
+          duration: musicData.duration || duration,
+          created_at: new Date().toISOString()
+        };
+      } else if (result.data.taskId) {
+        // 여전히 taskId만 받은 경우 (비동기)
+        const taskId = result.data.taskId;
+        console.log('⏳ Still async, taskId:', taskId);
+        return await this.waitForMusicCompletion(taskId, prompt, duration);
+      }
     } else {
       console.error('Unexpected response format:', result);
       throw new Error(`Unexpected response format: ${JSON.stringify(result)}`);
     }
   }
 
-  // taskId로 음악 완성 대기 (간단한 폴링 방식)
+  // taskId로 음악 완성 대기 (실제 폴링 방식)
   private static async waitForMusicCompletion(taskId: string, prompt: string, duration: number): Promise<SunoResponse> {
     // 저장소에 작업 등록
     const { callbackStorage } = await import('@/lib/storage');
     await callbackStorage.registerTask(taskId);
     
-    console.log('🔄 Using simplified polling approach for task:', taskId);
+    console.log('🔄 Starting real polling for task:', taskId);
     
-    // 간단한 대기 시간 (30초) 후 응답 반환
-    // 실제 폴링은 클라이언트나 별도 프로세스에서 처리
-    setTimeout(async () => {
-      try {
-        // 백그라운드에서 콜백 확인
-        console.log('⏰ Background: Checking if callback arrived for', taskId);
-        const result = await callbackStorage.getResult(taskId);
-        if (result && result.status === 'completed') {
-          console.log('✅ Background: Found completed result');
-        }
-      } catch (error) {
-        console.warn('⚠️ Background check failed:', error);
+    // 실제 폴링 - 최대 5분 동안 10초마다 확인
+    const maxAttempts = 30; // 5분 = 30 * 10초
+    const pollInterval = 10000; // 10초
+    
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      console.log(`🔍 Polling attempt ${attempt + 1}/${maxAttempts} for taskId:`, taskId);
+      
+      // 첫 번째 시도가 아니면 대기
+      if (attempt > 0) {
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
       }
-    }, 30000);
+      
+      try {
+        // 1단계: 콜백 결과 확인
+        let result = await callbackStorage.getResult(taskId);\n        \n        // 2단계: 콜백이 없으면 Suno API에 직접 상태 확인\n        if (!result) {\n          console.log(`🔍 No callback result, checking Suno API directly for ${taskId}`);\n          try {\n            const statusResult = await this.checkSunoTaskStatus(taskId);\n            if (statusResult && statusResult.status === 'completed') {\n              // 수동으로 콜백 저장\n              await callbackStorage.saveCallback(taskId, statusResult);\n              console.log('✅ Manually saved completed result from Suno API check');\n              result = statusResult; // 결과 업데이트\n            }\n          } catch (statusError) {\n            console.warn('⚠️ Direct Suno API status check failed:', statusError);\n          }\n        }
+        
+        if (result && result.status === 'completed' && result.audioUrl) {
+          console.log('✅ Music generation completed for taskId:', taskId);
+          
+          return {
+            id: taskId,
+            title: result.title || 'AI Generated Music',
+            audio_url: result.audioUrl,
+            image_url: result.imageUrl || null,
+            status: 'complete',
+            prompt: prompt,
+            duration: result.duration || duration,
+            created_at: new Date().toISOString()
+          };
+        } else if (result && result.status === 'failed') {
+          console.error('❌ Music generation failed for taskId:', taskId, result.error);
+          throw new Error(`Music generation failed: ${result.error}`);
+        }
+        
+        // 아직 완료되지 않음 - 계속 폴링
+        console.log(`⏳ Task ${taskId} still in progress... (attempt ${attempt + 1})`);
+        
+      } catch (error) {
+        console.warn(`⚠️ Polling error for taskId ${taskId} (attempt ${attempt + 1}):`, error);
+        
+        // 마지막 시도라면 에러 발생
+        if (attempt === maxAttempts - 1) {
+          throw new Error(`Music generation timeout after ${maxAttempts} attempts`);
+        }
+      }
+    }
     
-    // 즉시 processing 상태로 응답
-    return {
-      id: taskId,
-      title: 'AI Generated Music (Processing)',
-      audio_url: `/api/suno-result/${taskId}`, // 결과 조회 엔드포인트
-      image_url: null,
-      status: 'processing', // 처리 중
-      prompt: prompt,
-      duration: duration,
-      created_at: new Date().toISOString()
-    };
+    // 시간 초과
+    console.error('⏰ Timeout waiting for music generation completion');
+    throw new Error('Music generation timeout - please try again');
   }
 
   // Suno Proxy API 사용 (더 안정적)
