@@ -1,8 +1,0 @@
-{
-  "/page": "app/page.js",
-  "/privacy/page": "app/privacy/page.js",
-  "/refund/page": "app/refund/page.js",
-  "/faq/page": "app/faq/page.js",
-  "/terms/page": "app/terms/page.js",
-  "/guide/page": "app/guide/page.js"
-}
