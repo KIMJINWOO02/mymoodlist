@@ -1,0 +1,74 @@
+다음 파일들을 수동으로 삭제해주세요:
+
+src/app/ 폴더에서 삭제할 파일들:
+- favicon.ico (가장 중요!)
+- BACKUP_ICON.txt
+- COMPLETELY_DELETED.txt
+- COMPLETELY_REMOVED.txt
+- COMPLETELY_REMOVED_FAVICON.bak
+- DELETED_FAVICON_BACKUP.txt
+- DELETED_favicon_file.txt
+- FINAL_BACKUP_OF_FAVICON.txt
+- FINAL_README.txt
+- NOTANICON.txt
+- NOTFAVICON.txt
+- NOT_FAVICON.txt
+- NOT_FAVICON_FILE.txt
+- NO_FAVICON_HERE.md
+- OLD_FAVICON_RENAMED.txt
+- README_PLACEHOLDER.txt
+- REMOVED_FAVICON_COMPLETELY.txt
+- REMOVED_FAVICON_FINAL.txt
+- REMOVED_favicon_ico.backup
+- _favicon_disabled.ico
+- backup_of_favicon.txt
+- disabled_favicon.txt
+- disabled_icon_file.txt
+- favicon.disabled
+- favicon.disabled.ico
+- favicon.disabled.txt
+- favicon.ico.backup
+- favicon.ico.completely_disabled
+- favicon.ico.completely_removed
+- favicon.ico.disabled
+- favicon.txt
+- favicon_backup_final.txt
+- favicon_completely_disabled.txt
+- favicon_old.ico
+- favicon_removed.txt
+- favicon_temp_removed.txt
+- icon_removed.txt
+- not-found.disabled
+- not_an_icon.txt
+- old_favicon.backup
+- old_favicon_backup.ico
+- old_favicon_backup.txt
+- old_favicon_backup_final.txt
+- old_favicon_completely_disabled.txt
+- old_favicon_file.txt
+- old_favicon_removed.bak
+- old_icon.txt
+- old_icon_file.txt
+- placeholder.txt
+- placeholder_file.txt
+- placeholder_final.txt
+- readme.txt
+- removed_favicon.txt
+- removed_favicon_file.txt
+- removed_icon.txt
+- temp.txt
+- temp_delete_marker.txt
+- temp_favicon_removed.txt
+- temp_file.txt
+- temp_placeholder.txt
+- temp_placeholder_file.txt
+- temporary_file.txt
+- CLEANUP_COMPLETE.md
+
+유지할 파일들:
+- api/ (폴더)
+- globals.css
+- layout.tsx
+- not-found.tsx
+- page.tsx
+- icon.svg
