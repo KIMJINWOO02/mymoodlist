@@ -32,7 +32,7 @@ export class MusicService {
         .from('music_generations')
         .insert({
           user_id: userId,
-          prompt: `Scene: ${formData.scene}, Mood: ${formData.mood}, Genre: ${formData.genre}, Use Case: ${formData.useCase}, Instruments: ${formData.instruments.join(', ')}, Custom: ${formData.customInput}`,
+          prompt: `Scene: ${formData.scene}, Mood: ${formData.mood}, Genre: ${formData.genre}, Use Case: ${formData.useCase}, Instruments: ${formData.instruments}, Custom: ${formData.additional}`,
           generated_prompt: generatedPrompt,
           duration: parseInt(formData.duration),
           genre: formData.genre,
