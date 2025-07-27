@@ -38,7 +38,7 @@ export interface SunoResponse {
   title?: string;
   audio_url: string;
   video_url?: string;
-  image_url?: string;
+  image_url?: string | null;
   status: 'queued' | 'processing' | 'complete' | 'error';
   prompt?: string;
   duration?: number;
