@@ -23,7 +23,7 @@ export async function GET(
     console.log('💡 Relying on callback mechanism instead');
 
     // 상태 확인 실패 - 로컬 저장소에서 확인
-    const localResult = callbackStorage.getResult(taskId);
+    const localResult = await callbackStorage.getResult(taskId);
     
     if (localResult) {
       return NextResponse.json({

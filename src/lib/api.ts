@@ -218,7 +218,7 @@ export class SunoService {
   private static async waitForMusicCompletion(taskId: string, prompt: string, duration: number): Promise<SunoResponse> {
     // 저장소에 작업 등록
     const { callbackStorage } = await import('@/lib/storage');
-    callbackStorage.registerTask(taskId);
+    await callbackStorage.registerTask(taskId);
     
     console.log('🔄 Using simplified polling approach for task:', taskId);
     
@@ -228,7 +228,7 @@ export class SunoService {
       try {
         // 백그라운드에서 콜백 확인
         console.log('⏰ Background: Checking if callback arrived for', taskId);
-        const result = callbackStorage.getResult(taskId);
+        const result = await callbackStorage.getResult(taskId);
         if (result && result.status === 'completed') {
           console.log('✅ Background: Found completed result');
         }

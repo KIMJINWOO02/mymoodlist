@@ -9,14 +9,14 @@ export async function GET(request: NextRequest) {
     // 테스트 작업 추가
     if (action === 'test') {
       const testTaskId = 'test-' + Date.now();
-      callbackStorage.registerTask(testTaskId);
+      await callbackStorage.registerTask(testTaskId);
       console.log('🧪 Test task registered:', testTaskId);
     }
     
     // 방금 생성된 작업 ID 재등록
     if (action === 'register') {
       const taskId = searchParams.get('taskId') || 'a85f1304e8011812722caf5c8479b428';
-      callbackStorage.registerTask(taskId);
+      await callbackStorage.registerTask(taskId);
       console.log('🔄 Task re-registered:', taskId);
     }
     
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
 
 export async function DELETE() {
   try {
-    const cleaned = callbackStorage.cleanup(0); // 모든 작업 삭제
+    const cleaned = await callbackStorage.cleanup(0); // 모든 작업 삭제
     
     return NextResponse.json({
       success: true,

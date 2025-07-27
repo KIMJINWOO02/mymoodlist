@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     
     if (taskId) {
       // 콜백 데이터 저장
-      callbackStorage.saveCallback(taskId, body);
+      await callbackStorage.saveCallback(taskId, body);
       console.log('✅ Callback data saved for taskId:', taskId);
     } else {
       console.warn('⚠️ No taskId found in callback data');

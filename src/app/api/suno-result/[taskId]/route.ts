@@ -19,7 +19,7 @@ export async function GET(
     });
     
     // 저장소에서 결과 조회
-    const result = callbackStorage.getResult(taskId);
+    const result = await callbackStorage.getResult(taskId);
     console.log('🎯 Query result for', taskId, ':', result ? 'FOUND' : 'NOT FOUND');
     
     if (!result) {
