@@ -1,5 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
+// Global type declaration for callback storage
+declare global {
+  var __musicAppCallbackStorage: any;
+}
+
 // 데이터베이스 기반 콜백 데이터 저장소
 interface CallbackData {
   taskId: string;
