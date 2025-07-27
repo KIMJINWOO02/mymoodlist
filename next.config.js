@@ -4,18 +4,14 @@ const nextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production'
   },
-  webpack: (config, { dev, isServer }) => {
-    // favicon.ico 파일을 raw-loader로 처리해서 메타데이터 로더 회피
-    config.module.rules.push({
-      test: /favicon\.ico$/,
-      type: 'asset/resource',
-      generator: {
-        filename: 'static/media/[name].[hash][ext]'
-      }
-    });
-    
-    return config;
-  }
+  // 정적 파일 최적화
+  images: {
+    unoptimized: true
+  },
+  // 트레일링 슬래시 설정
+  trailingSlash: false,
+  // 출력 모드
+  output: 'standalone'
 }
 
 module.exports = nextConfig
