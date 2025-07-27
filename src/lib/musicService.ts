@@ -34,7 +34,7 @@ export class MusicService {
           user_id: userId,
           prompt: `Scene: ${formData.scene}, Mood: ${formData.mood}, Genre: ${formData.genre}, Use Case: ${formData.useCase}, Instruments: ${formData.instruments}, Custom: ${formData.additional}`,
           generated_prompt: generatedPrompt,
-          duration: parseInt(formData.duration),
+          duration: parseInt(formData.duration.toString()),
           genre: formData.genre,
           mood: formData.mood,
           scene: formData.scene,
