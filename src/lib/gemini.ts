@@ -33,7 +33,7 @@ export class GeminiService {
   }
 
   // Gemini에게 전달할 프롬프트 템플릿 생성
-  private static createPromptTemplate(formData: FormData): string {
+  private static createPromptTemplate(formData: MusicFormData): string {
     const { scene, mood, genre, useCase, instruments, additional } = formData;
 
     return `
@@ -67,7 +67,7 @@ export class GeminiService {
   }
 
   // Gemini API 실패 시 사용할 기본 프롬프트 생성 (시적 묘사형)
-  private static createFallbackPrompt(formData: FormData): string {
+  private static createFallbackPrompt(formData: MusicFormData): string {
     const { scene, mood, genre, instruments } = formData;
     
     // 시적 표현을 위한 맵핑
