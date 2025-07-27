@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from './supabase';
 
 // Global type declaration for callback storage
 declare global {
@@ -20,10 +20,7 @@ interface CallbackData {
 }
 
 class CallbackStorage {
-  private supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  private supabaseClient = supabase;
 
   // 새 작업 등록
   async registerTask(taskId: string): Promise<void> {
@@ -35,7 +32,7 @@ class CallbackStorage {
     
     console.log('📝 Registering task in database:', taskId);
     
-    const { error } = await this.supabase
+    const { error } = await this.supabaseClient
       .from('music_generation_tasks')
       .insert(taskData);
 
@@ -52,7 +49,7 @@ class CallbackStorage {
     console.log('💾 Saving callback data for task:', taskId);
     
     // 기존 데이터 조회
-    const { data: existing } = await this.supabase
+    const { data: existing } = await this.supabaseClient
       .from('music_generation_tasks')
       .select('*')
       .eq('task_id', taskId)
@@ -93,7 +90,7 @@ class CallbackStorage {
       updateData.error = callbackData.error || 'Unknown error';
     }
 
-    const { error } = await this.supabase
+    const { error } = await this.supabaseClient
       .from('music_generation_tasks')
       .update(updateData)
       .eq('task_id', taskId);
@@ -108,7 +105,7 @@ class CallbackStorage {
 
   // 결과 조회
   async getResult(taskId: string): Promise<CallbackData | null> {
-    const { data, error } = await this.supabase
+    const { data, error } = await this.supabaseClient
       .from('music_generation_tasks')
       .select('*')
       .eq('task_id', taskId)
@@ -137,7 +134,7 @@ class CallbackStorage {
 
   // 모든 작업 조회 (디버깅용)
   async getAllTasks(): Promise<CallbackData[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await this.supabaseClient
       .from('music_generation_tasks')
       .select('*')
       .order('created_at', { ascending: false });
@@ -163,7 +160,7 @@ class CallbackStorage {
 
   // 완료된 작업만 조회
   async getCompletedTasks(): Promise<CallbackData[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await this.supabaseClient
       .from('music_generation_tasks')
       .select('*')
       .eq('status', 'completed')
@@ -192,7 +189,7 @@ class CallbackStorage {
   async cleanup(maxAgeHours: number = 24): Promise<number> {
     const cutoff = new Date(Date.now() - maxAgeHours * 60 * 60 * 1000).toISOString();
     
-    const { data, error } = await this.supabase
+    const { data, error } = await this.supabaseClient
       .from('music_generation_tasks')
       .delete()
       .lt('created_at', cutoff)

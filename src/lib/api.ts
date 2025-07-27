@@ -293,7 +293,23 @@ export class SunoService {
       
       try {
         // 1단계: 콜백 결과 확인
-        let result = await callbackStorage.getResult(taskId);\n        \n        // 2단계: 콜백이 없으면 Suno API에 직접 상태 확인\n        if (!result) {\n          console.log(`🔍 No callback result, checking Suno API directly for ${taskId}`);\n          try {\n            const statusResult = await this.checkSunoTaskStatus(taskId);\n            if (statusResult && statusResult.status === 'completed') {\n              // 수동으로 콜백 저장\n              await callbackStorage.saveCallback(taskId, statusResult);\n              console.log('✅ Manually saved completed result from Suno API check');\n              result = statusResult; // 결과 업데이트\n            }\n          } catch (statusError) {\n            console.warn('⚠️ Direct Suno API status check failed:', statusError);\n          }\n        }
+        let result = await callbackStorage.getResult(taskId);
+        
+        // 2단계: 콜백이 없으면 Suno API에 직접 상태 확인
+        if (!result) {
+          console.log(`🔍 No callback result, checking Suno API directly for ${taskId}`);
+          try {
+            const statusResult = await this.checkSunoTaskStatus(taskId);
+            if (statusResult && statusResult.status === 'completed') {
+              // 수동으로 콜백 저장
+              await callbackStorage.saveCallback(taskId, statusResult);
+              console.log('✅ Manually saved completed result from Suno API check');
+              result = statusResult; // 결과 업데이트
+            }
+          } catch (statusError) {
+            console.warn('⚠️ Direct Suno API status check failed:', statusError);
+          }
+        }
         
         if (result && result.status === 'completed' && result.audioUrl) {
           console.log('✅ Music generation completed for taskId:', taskId);
