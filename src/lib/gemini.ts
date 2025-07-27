@@ -2,7 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { FormData as MusicFormData } from '@/types';
 
 // API 키 설정 (서버 사이드에서만 접근)
-const apiKey = process.env.GEMINI_API_KEY;
+const apiKey = process.env.GEMINI_API_KEY || '';
 
 if (!apiKey) {
   console.warn('Gemini API key not found. Please set GEMINI_API_KEY in .env.local');
