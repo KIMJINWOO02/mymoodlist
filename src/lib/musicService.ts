@@ -186,7 +186,7 @@ export class MusicService {
 
       if (error) throw error;
       
-      return data?.map(item => item.music_generations).filter(Boolean) as MusicGeneration[] || [];
+      return data?.map((item: any) => item.music_generations as MusicGeneration).filter(Boolean) || [];
     } catch (error) {
       console.error('Error fetching user favorites:', error);
       return [];
