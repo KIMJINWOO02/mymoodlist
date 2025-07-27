@@ -190,10 +190,26 @@ export class SunoService {
   static async generateMusic(prompt: string, duration: number = 30): Promise<SunoResponse> {
     // SunoAPI.org 직접 API 사용
     try {
+      console.log('🎵 Attempting Suno API music generation...');
       return await this.generateWithSunoAPIOrg(prompt, duration);
     } catch (error) {
-      console.log('SunoAPI.org failed, using demo fallback:', error);
-      return await this.generateDemoFallback(prompt, duration);
+      console.error('❌ SunoAPI.org failed:', error);
+      
+      // 에러가 API 키 관련이면 즉시 데모로 폴백
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('API key') || errorMessage.includes('401') || errorMessage.includes('403')) {
+        console.log('🔑 API key issue detected, using demo fallback');
+        return await this.generateDemoFallback(prompt, duration);
+      }
+      
+      // 다른 에러는 한 번 더 시도 후 데모 폴백
+      try {
+        console.log('🔄 Retrying with proxy API...');
+        return await this.generateWithProxy(prompt, duration);
+      } catch (retryError) {
+        console.log('🎭 All methods failed, using demo fallback');
+        return await this.generateDemoFallback(prompt, duration);
+      }
     }
   }
 
