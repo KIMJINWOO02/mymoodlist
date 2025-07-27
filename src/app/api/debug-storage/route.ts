@@ -20,8 +20,8 @@ export async function GET(request: NextRequest) {
       console.log('🔄 Task re-registered:', taskId);
     }
     
-    const allTasks = callbackStorage.getAllTasks();
-    const completedTasks = callbackStorage.getCompletedTasks();
+    const allTasks = await callbackStorage.getAllTasks();
+    const completedTasks = await callbackStorage.getCompletedTasks();
     
     return NextResponse.json({
       success: true,

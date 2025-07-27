@@ -11,7 +11,7 @@ export async function GET(
     console.log('🔍 Fetching Suno result for taskId:', taskId);
     
     // 저장소 상태 디버깅
-    const allTasks = callbackStorage.getAllTasks();
+    const allTasks = await callbackStorage.getAllTasks();
     console.log('📊 Current storage state:', {
       totalTasks: allTasks.length,
       taskIds: allTasks.map(t => t.taskId),

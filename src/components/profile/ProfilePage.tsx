@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Music, Download, Clock, Trash2, Play, Pause, Volume2, Settings, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSupabaseTokens } from '@/contexts/SupabaseTokenContext';
@@ -11,8 +11,25 @@ interface ProfilePageProps {
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack, onTokenChargeClick }) => {
   const { user: authUser, signOut } = useAuth();
-  const { tokens: supabaseTokens, transactions } = useSupabaseTokens();
+  const { tokens: supabaseTokens, getTransactionHistory } = useSupabaseTokens();
   const [activeTab, setActiveTab] = useState<'profile' | 'tokens' | 'music'>('profile');
+  const [transactions, setTransactions] = useState<any[]>([]);
+
+  // Load transaction history
+  useEffect(() => {
+    const loadTransactions = async () => {
+      try {
+        const history = await getTransactionHistory();
+        setTransactions(history);
+      } catch (error) {
+        console.error('Error loading transactions:', error);
+      }
+    };
+
+    if (authUser) {
+      loadTransactions();
+    }
+  }, [authUser, getTransactionHistory]);
 
   // Mock data for music history (실제로는 데이터베이스에서 가져와야 함)
   const musicHistory = [
