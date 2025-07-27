@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -53,9 +53,9 @@ export const SupabaseTokenProvider: React.FC<SupabaseTokenProviderProps> = ({ ch
       setTokens(0);
       setLoading(false);
     }
-  }, [user]);
+  }, [user, refreshTokens]);
 
-  const refreshTokens = async () => {
+  const refreshTokens = useCallback(async () => {
     if (!user) {
       setLoading(false);
       return;
@@ -75,7 +75,7 @@ export const SupabaseTokenProvider: React.FC<SupabaseTokenProviderProps> = ({ ch
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   const useTokens = async (amount: number, description: string, musicGenerationId?: string): Promise<boolean> => {
     if (!user || tokens < amount) {

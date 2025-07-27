@@ -98,7 +98,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         setPollingInterval(null);
       }
     };
-  }, [duration, audioUrl, pollingInterval]);
+  }, [duration, audioUrl, pollingInterval, showError]);
 
   const togglePlay = async () => {
     const audio = audioRef.current;
