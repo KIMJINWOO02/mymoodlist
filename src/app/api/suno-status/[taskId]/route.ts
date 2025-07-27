@@ -42,8 +42,9 @@ export async function GET(
       taskId: taskId,
       message: 'Could not determine task status',
       debug: {
-        triedEndpoints: statusEndpoints,
-        hasLocalStorage: false
+        triedMethods: ['local_storage', 'callback_mechanism'],
+        hasLocalStorage: false,
+        skippedSunoAPI: 'endpoints_not_supported'
       }
     }, { status: 404 });
 
