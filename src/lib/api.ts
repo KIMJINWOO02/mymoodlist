@@ -215,9 +215,9 @@ export class SunoService {
       prompt: prompt,
       customMode: true,      // SunoAPI.org 필수 파라미터
       instrumental: false,
-      wait_audio: true,      // 동기적으로 완료까지 대기
+      wait_audio: false,     // 비동기로 변경 - taskId만 받고 폴링으로 확인
       model: 'V3_5',        // SunoAPI.org 지원 모델명
-      callBackUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/suno-callback` // 더미 URL (폴링 사용)
+      callBackUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/suno-callback`
     };
 
     console.log('📤 Request body:', requestBody);
@@ -242,15 +242,19 @@ export class SunoService {
     const result = await response.json();
     console.log('✅ SunoAPI.org raw response:', result);
 
-    // SunoAPI.org 응답 형식 처리 (wait_audio: true로 완성된 음악 반환)
+    // SunoAPI.org 응답 형식 처리 (wait_audio: false로 taskId 받고 폴링)
     if (result.code === 200 && result.data) {
-      console.log('✅ Music generation completed synchronously');
-      
-      // 완성된 음악 데이터 확인
-      if (Array.isArray(result.data) && result.data.length > 0) {
+      // taskId 받고 폴링 시작
+      if (result.data.taskId) {
+        const taskId = result.data.taskId;
+        console.log('⏳ Received taskId, starting polling:', taskId);
+        return await this.waitForMusicCompletion(taskId, prompt, duration);
+      } else if (Array.isArray(result.data) && result.data.length > 0) {
+        // 예외적으로 즉시 완성된 경우
         const musicData = result.data[0];
+        console.log('✅ Music completed immediately');
         return {
-          id: musicData.id || 'sync-' + Date.now(),
+          id: musicData.id || 'immediate-' + Date.now(),
           title: musicData.title || 'AI Generated Music',
           audio_url: musicData.audio_url || musicData.audioUrl,
           image_url: musicData.image_url || musicData.imageUrl,
@@ -259,11 +263,6 @@ export class SunoService {
           duration: musicData.duration || duration,
           created_at: new Date().toISOString()
         };
-      } else if (result.data.taskId) {
-        // 여전히 taskId만 받은 경우 (비동기)
-        const taskId = result.data.taskId;
-        console.log('⏳ Still async, taskId:', taskId);
-        return await this.waitForMusicCompletion(taskId, prompt, duration);
       }
     } else {
       console.error('Unexpected response format:', result);
