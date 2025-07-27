@@ -1,13 +1,16 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSupabaseTokens } from '@/contexts/SupabaseTokenContext';
 import { useTokens } from '@/contexts/TokenContext';
 import { CheckCircle, XCircle, ArrowLeft, Sparkles } from 'lucide-react';
 
-export default function PaymentSuccessPage() {
+// Force dynamic rendering to prevent SSR issues with searchParams
+export const dynamic = 'force-dynamic';
+
+function PaymentSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user: authUser } = useAuth();
@@ -223,5 +226,21 @@ export default function PaymentSuccessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-orange-50 dark:bg-black">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-amber-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">페이지 로딩 중...</h2>
+          <p className="text-gray-600 dark:text-gray-400">잠시만 기다려주세요.</p>
+        </div>
+      </div>
+    }>
+      <PaymentSuccessContent />
+    </Suspense>
   );
 }
