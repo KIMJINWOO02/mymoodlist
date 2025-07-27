@@ -7,6 +7,7 @@ export interface AuthUser {
   full_name?: string;
   avatar_url?: string;
   tokens: number;
+  created_at?: string;
 }
 
 export class AuthService {
@@ -90,7 +91,8 @@ export class AuthService {
         email: user.email!,
         full_name: userData.full_name,
         avatar_url: userData.avatar_url,
-        tokens: userData.tokens
+        tokens: userData.tokens,
+        created_at: user.created_at
       };
     } catch (error: any) {
       console.error('Get current user error:', error);
