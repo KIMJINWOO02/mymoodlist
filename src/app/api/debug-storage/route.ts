@@ -26,11 +26,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       totalTasks: allTasks.length,
-      completedTasks: completedTasks.length,
+      completedTasksCount: completedTasks.length,
       pendingTasks: allTasks.filter(t => t.status === 'pending').length,
       failedTasks: allTasks.filter(t => t.status === 'failed').length,
       allTasks: allTasks,
-      completedTasks: completedTasks,
+      completedTasksData: completedTasks,
       lastAction: action
     });
     
