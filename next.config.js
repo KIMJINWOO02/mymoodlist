@@ -10,7 +10,7 @@ const nextConfig = {
   },
   // 트레일링 슬래시 설정
   trailingSlash: false,
-  // 출력 모드
+  // 출력 모드 (Netlify용)
   output: 'standalone'
 }
 
