@@ -46,15 +46,6 @@ export const SupabaseTokenProvider: React.FC<SupabaseTokenProviderProps> = ({ ch
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
-  useEffect(() => {
-    if (user) {
-      refreshTokens();
-    } else {
-      setTokens(0);
-      setLoading(false);
-    }
-  }, [user, refreshTokens]);
-
   const refreshTokens = useCallback(async () => {
     if (!user) {
       setLoading(false);
@@ -76,6 +67,15 @@ export const SupabaseTokenProvider: React.FC<SupabaseTokenProviderProps> = ({ ch
       setLoading(false);
     }
   }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      refreshTokens();
+    } else {
+      setTokens(0);
+      setLoading(false);
+    }
+  }, [user, refreshTokens]);
 
   const useTokens = async (amount: number, description: string, musicGenerationId?: string): Promise<boolean> => {
     if (!user || tokens < amount) {
