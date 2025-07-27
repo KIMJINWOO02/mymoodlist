@@ -124,7 +124,7 @@ export const ResultPage: React.FC<ResultPageProps> = ({ result, onRestart }) => 
               <div className="bg-gradient-to-r from-amber-600/25 to-orange-600/25 backdrop-blur-sm rounded-2xl p-6 border border-amber-400/35 relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-amber-400/10 to-orange-400/10"></div>
                 <p className="relative z-10 text-amber-100 italic leading-relaxed text-lg">
-                  "{result.prompt}"
+                  &quot;{result.prompt}&quot;
                 </p>
               </div>
               <p className="text-amber-100/80 mt-4 text-center">
@@ -169,7 +169,7 @@ export const ResultPage: React.FC<ResultPageProps> = ({ result, onRestart }) => 
               <ul className="text-amber-100/90 space-y-3">
                 <li className="flex items-start space-x-3">
                   <div className="w-1.5 h-1.5 bg-amber-400 rounded-full mt-2 flex-shrink-0"></div>
-                  <span>음악이 마음에 들지 않으면 '다시 만들기'로 새로운 음악을 생성해보세요</span>
+                  <span>음악이 마음에 들지 않으면 &apos;다시 만들기&apos;로 새로운 음악을 생성해보세요</span>
                 </li>
                 <li className="flex items-start space-x-3">
                   <div className="w-1.5 h-1.5 bg-orange-400 rounded-full mt-2 flex-shrink-0"></div>

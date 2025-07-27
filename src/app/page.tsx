@@ -52,8 +52,8 @@ export default function HomePage() {
   const handleFormComplete = async (formData: FormData) => {
     // 로그인된 사용자는 Supabase 토큰, 비로그인 사용자는 로컬 토큰 사용
     const currentTokens = authUser ? supabaseTokens : (localUser?.tokens || 0);
-    const useTokensFunction = authUser ? consumeSupabaseTokens : consumeTokens;
-    const refundTokensFunction = authUser ? refundSupabaseTokens : refundLocalTokens;
+    const consumeTokensFunc = authUser ? consumeSupabaseTokens : consumeTokens;
+    const refundTokensFunc = authUser ? refundSupabaseTokens : refundLocalTokens;
 
     // Check if user has enough tokens
     if (currentTokens < TOKENS_PER_GENERATION) {
@@ -86,7 +86,7 @@ export default function HomePage() {
         setLoadingMessage('음악 생성이 완료되었습니다. 토큰을 차감합니다...');
 
         // 성공했을 때만 토큰 차감
-        const tokenUsed = await useTokensFunction(TOKENS_PER_GENERATION, '음악 생성 성공');
+        const tokenUsed = await consumeTokensFunc(TOKENS_PER_GENERATION, '음악 생성 성공');
         if (!tokenUsed) {
           showError('토큰 차감 오류', '토큰 차감 중 오류가 발생했습니다. 고객지원에 문의해주세요.');
           setAppState('form');
