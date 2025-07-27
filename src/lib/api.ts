@@ -404,6 +404,43 @@ export class SunoService {
     return result;
   }
 
+  // SunoAPI.org 작업 상태 확인
+  private static async checkSunoTaskStatus(taskId: string): Promise<any> {
+    const apiKey = process.env.SUNO_API_KEY;
+    if (!apiKey) {
+      throw new Error('Suno API key not found');
+    }
+
+    const url = `${this.SUNO_API_URL}/api/v1/get?taskId=${taskId}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Status check failed: ${response.status}`);
+    }
+
+    const result = await response.json();
+    
+    if (result.code === 200 && result.data) {
+      return {
+        id: taskId,
+        status: result.data.status === 'complete' ? 'completed' : result.data.status,
+        audio_url: result.data.audio_url,
+        title: result.data.title,
+        duration: result.data.duration,
+        image_url: result.data.image_url
+      };
+    }
+    
+    return null;
+  }
+
   static async checkStatus(id: string): Promise<SunoResponse> {
     try {
       // 프록시를 통한 상태 확인
