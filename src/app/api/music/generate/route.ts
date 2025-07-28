@@ -122,62 +122,6 @@ export async function POST(request: NextRequest) {
       }, 503, origin || undefined);
     }
     
-    // 원본 Suno API 코드 (나중에 복원용)  
-    /*
-    try {
-      console.log('🎼 Starting async music generation with Suno AI...');
-      console.log('🔧 Environment check:', {
-        hasApiKey: !!process.env.SUNO_API_KEY,
-        apiKeyFirst10: process.env.SUNO_API_KEY?.substring(0, 10) + '...',
-        apiUrl: process.env.SUNO_API_URL
-      });
-      
-      // 즉시 taskId 반환 방식으로 변경
-      const taskResult = await SunoService.startMusicGeneration(prompt, duration);
-      
-      console.log('✅ Music generation task started:', {
-        taskId: taskResult.taskId,
-        status: 'processing'
-      });
-
-      // taskId와 함께 즉시 응답 반환
-      return corsResponse({
-        success: true,
-        message: 'Music generation started',
-        provider: 'suno',
-        taskId: taskResult.taskId,
-        status: 'processing',
-        estimatedTime: '60-120 seconds',
-        pollUrl: `/api/suno-status/${taskResult.taskId}`
-      }, 200, origin || undefined);
-
-    } catch (sunoError) {
-      console.error('❌ DETAILED Suno AI Error:', {
-        message: sunoError instanceof Error ? sunoError.message : sunoError,
-        stack: sunoError instanceof Error ? sunoError.stack : undefined,
-        name: sunoError instanceof Error ? sunoError.name : undefined
-      });
-      
-      // Suno AI 실패시 데모 폴백 제공
-      console.log('🎭 Fallback to demo music due to API failure');
-      
-      const demoResult = await SunoService.generateDemoFallback(prompt, duration);
-      
-      return corsResponse({
-        success: true,
-        message: 'Music generation completed with demo fallback',
-        provider: 'demo',
-        data: [{
-          id: demoResult.id,
-          title: sanitizeInput(demoResult.title || 'AI Generated Demo Music'),
-          audio_url: demoResult.audio_url,
-          image_url: demoResult.image_url,
-          status: demoResult.status,
-          duration: demoResult.duration || duration
-        }]
-      }, 200, origin || undefined);
-    }
-    
   } catch (error) {
     console.error('❌ Music generation API error:', error);
     
