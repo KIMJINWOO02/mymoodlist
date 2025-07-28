@@ -20,7 +20,8 @@ export async function POST(request: NextRequest) {
     const requestBody = {
       prompt: prompt,
       model: 'v3.5', // sunoapi.org에서 사용하는 모델명
-      wait_audio: false // 비동기 방식
+      wait_audio: false, // 비동기 방식
+      customMode: true // SunoAPI.org 필수 파라미터
     };
     
     console.log('📤 Request to:', endpoint);

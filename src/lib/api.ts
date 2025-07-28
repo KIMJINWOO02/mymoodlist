@@ -302,7 +302,8 @@ export class SunoService {
     const requestBody = {
       prompt: prompt,
       model: 'v3.5', // sunoapi.org 지원 모델
-      wait_audio: false // 비동기 방식
+      wait_audio: false, // 비동기 방식
+      customMode: true // SunoAPI.org 필수 파라미터
     };
 
     console.log('📤 Starting generation with request:', { 
