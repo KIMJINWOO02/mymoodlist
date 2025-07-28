@@ -334,9 +334,11 @@ export class SunoService {
     const result = await response.json();
     console.log('✅ Generation started successfully:', result);
 
-    // sunoapi.org 응답 형식에 맞춰 처리
-    if (result.success && result.data) {
-      const taskId = result.data[0]?.id || `task-${Date.now()}`;
+    // sunoapi.org 실제 응답 형식에 맞춰 처리
+    if (result.code === 200 && result.data && result.data.taskId) {
+      const taskId = result.data.taskId;
+      
+      console.log('✅ Extracted taskId:', taskId);
       
       // 저장소에 작업 등록
       try {
