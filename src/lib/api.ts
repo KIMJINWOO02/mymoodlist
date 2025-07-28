@@ -304,6 +304,7 @@ export class SunoService {
       model: 'V3_5', // sunoapi.org 지원 모델 (올바른 형식)
       wait_audio: false, // 비동기 방식
       customMode: true, // SunoAPI.org 필수 파라미터
+      instrumental: false, // 가사 포함 음악 생성
       callBackUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://mymoodlist.com'}/api/suno-callback`
     };
 

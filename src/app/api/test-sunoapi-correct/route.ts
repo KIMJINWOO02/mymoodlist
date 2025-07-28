@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
       model: 'V3_5', // sunoapi.org에서 사용하는 모델명 (올바른 형식)
       wait_audio: false, // 비동기 방식
       customMode: true, // SunoAPI.org 필수 파라미터
+      instrumental: false, // 가사 포함 음악 생성
       callBackUrl: 'https://mymoodlist.com/api/suno-callback'
     };
     
