@@ -24,64 +24,53 @@ export class ApiService {
   }
 
   static async generateMusic(formData: MusicFormData, geminiPrompt: string): Promise<MusicGenerationResult> {
-    const maxRetries = 2;
-    let lastError: any;
+    try {
+      console.log('🎵 Starting music generation request...');
+      
+      // Gemini 프롬프트와 duration을 함께 전달
+      const requestData = {
+        prompt: geminiPrompt,
+        duration: formData.duration,
+        formData: formData
+      };
 
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        console.log(`🎵 Music generation attempt ${attempt}/${maxRetries}`);
-        
-        // Gemini 프롬프트와 duration을 함께 전달
-        const requestData = {
-          prompt: geminiPrompt,
-          duration: formData.duration,
-          formData: formData
-        };
+      const response = await api.post('/api/music/generate', requestData);
+      
+      if (!response.data.success) {
+        throw new ApiError(response.data.error || 'Music generation failed');
+      }
 
-        const response = await api.post('/api/music/generate', requestData);
+      // 응답 타입 확인: taskId가 있으면 폴링 시작, 데이터가 있으면 즉시 반환
+      if (response.data.taskId) {
+        console.log(`🔄 Music generation started, polling for completion. TaskId: ${response.data.taskId}`);
         
-        if (!response.data.success) {
-          throw new ApiError(response.data.error || 'Music generation failed');
-        }
-
-        // Suno API 응답을 MusicGenerationResult 형태로 변환
-        const sunoData = response.data.data[0]; // 첫 번째 생성된 음악 선택
+        // 폴링으로 완성 대기
+        return await this.pollForCompletion(response.data.taskId, geminiPrompt, formData.duration);
         
-        console.log('✅ Music generation successful');
+      } else if (response.data.data && response.data.data[0]) {
+        // 즉시 완성된 경우 (데모 또는 캐시된 결과)
+        const sunoData = response.data.data[0];
+        
+        console.log('✅ Music generation completed immediately');
         
         return {
-          prompt: geminiPrompt, // Gemini가 생성한 프롬프트 유지
+          prompt: geminiPrompt,
           audioUrl: sunoData.audio_url,
           title: sunoData.title,
           duration: sunoData.duration || formData.duration,
           imageUrl: sunoData.image_url
         };
-      } catch (error: any) {
-        lastError = error;
-        console.error(`❌ Music generation attempt ${attempt} failed:`, error.message);
-        
-        // 마지막 시도가 아니고 타임아웃 에러인 경우 재시도
-        if (attempt < maxRetries && (
-          error.code === 'ECONNABORTED' || 
-          error.response?.status === 504 ||
-          error.response?.status === 503 ||
-          error.message.includes('timeout')
-        )) {
-          console.log(`⏳ Retrying in 2 seconds... (${attempt}/${maxRetries})`);
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          continue;
-        }
-        
-        // 다른 에러는 즉시 throw
-        break;
+      } else {
+        throw new ApiError('Invalid response format from music generation API');
       }
+      
+    } catch (error: any) {
+      console.error('❌ Music generation failed:', error.message);
+      throw new ApiError(
+        error?.response?.data?.error || error?.message || 'Failed to generate music', 
+        error?.response?.status
+      );
     }
-
-    console.error('❌ All music generation attempts failed');
-    throw new ApiError(
-      lastError?.response?.data?.error || lastError?.message || 'Failed to generate music', 
-      lastError?.response?.status
-    );
   }
 
   // 음악 생성 완료를 위한 폴링 함수
@@ -217,6 +206,61 @@ Generate the music description:`;
 export class SunoService {
   private static readonly SUNO_API_URL = process.env.SUNO_API_URL || 'https://api.sunoapi.org';
   private static readonly PROXY_URL = process.env.SUNO_PROXY_URL || 'https://suno-api-beta.vercel.app/api';
+  
+  // 새로운 메서드: 음악 생성 시작 (즉시 taskId 반환)
+  static async startMusicGeneration(prompt: string, duration: number = 30): Promise<{ taskId: string }> {
+    const apiKey = process.env.SUNO_API_KEY;
+    if (!apiKey) {
+      throw new Error('Suno API key not found. Please set SUNO_API_KEY in environment variables.');
+    }
+
+    console.log('🎼 Starting music generation task...');
+
+    const endpoint = '/api/v1/generate';
+    const url = `${this.SUNO_API_URL}${endpoint}`;
+    
+    const requestBody = {
+      prompt: prompt,
+      customMode: true,
+      instrumental: false,
+      wait_audio: false, // 즉시 taskId 반환
+      model: 'V3_5',
+      callBackUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/suno-callback`
+    };
+
+    console.log('📤 Starting generation with request:', { prompt: prompt.substring(0, 100) + '...', wait_audio: false });
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    console.log(`📡 Generation start response status:`, response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ SunoAPI.org generation start error:', errorText);
+      throw new Error(`SunoAPI.org error: ${response.status} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log('✅ Generation started successfully:', result);
+
+    if (result.code === 200 && result.data?.taskId) {
+      // 저장소에 작업 등록
+      const { callbackStorage } = await import('@/lib/storage');
+      await callbackStorage.registerTask(result.data.taskId);
+      
+      return { taskId: result.data.taskId };
+    } else {
+      console.error('Unexpected response format:', result);
+      throw new Error(`Unexpected response format: ${JSON.stringify(result)}`);
+    }
+  }
   
   static async generateMusic(prompt: string, duration: number = 30): Promise<SunoResponse> {
     // SunoAPI.org 직접 API 사용

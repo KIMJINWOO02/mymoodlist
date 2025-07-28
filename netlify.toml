@@ -6,6 +6,16 @@
   NODE_VERSION = "18"
   SECRETS_SCAN_ENABLED = "false"
 
+[functions]
+  # Increase function timeout for music generation
+  # Default Netlify timeout is 10 seconds, maximum is 26 seconds for hobby plan
+  external_node_modules = ["@supabase/supabase-js"]
+  node_bundler = "nft"
+
+[[functions]]
+  function = "*"
+  included_files = [".next/**"]
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
