@@ -303,7 +303,8 @@ export class SunoService {
       prompt: prompt,
       model: 'V3_5', // sunoapi.org 지원 모델 (올바른 형식)
       wait_audio: false, // 비동기 방식
-      customMode: true // SunoAPI.org 필수 파라미터
+      customMode: true, // SunoAPI.org 필수 파라미터
+      callBackUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://mymoodlist.com'}/api/suno-callback`
     };
 
     console.log('📤 Starting generation with request:', { 

@@ -21,7 +21,8 @@ export async function POST(request: NextRequest) {
       prompt: prompt,
       model: 'V3_5', // sunoapi.org에서 사용하는 모델명 (올바른 형식)
       wait_audio: false, // 비동기 방식
-      customMode: true // SunoAPI.org 필수 파라미터
+      customMode: true, // SunoAPI.org 필수 파라미터
+      callBackUrl: 'https://mymoodlist.com/api/suno-callback'
     };
     
     console.log('📤 Request to:', endpoint);
