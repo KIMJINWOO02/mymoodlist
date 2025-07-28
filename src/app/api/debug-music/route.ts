@@ -22,7 +22,9 @@ export async function GET(request: NextRequest) {
     let sunoTest = { success: false, error: 'Not tested' };
     if (process.env.SUNO_API_KEY) {
       try {
-        const testResponse = await fetch(`${process.env.SUNO_API_URL || 'https://api.sunoapi.org'}/api/v1/get?taskId=test`, {
+        // Suno API 상태 확인 (더 간단한 엔드포인트 사용)
+        const testUrl = `${process.env.SUNO_API_URL || 'https://api.sunoapi.org'}/api/v1/quota`;
+        const testResponse = await fetch(testUrl, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${process.env.SUNO_API_KEY}`,
@@ -48,7 +50,7 @@ export async function GET(request: NextRequest) {
     let geminiTest = { success: false, error: 'Not tested' };
     if (process.env.GEMINI_API_KEY) {
       try {
-        const testResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+        const testResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

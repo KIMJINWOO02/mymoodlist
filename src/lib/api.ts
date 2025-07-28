@@ -207,7 +207,7 @@ export class ApiService {
 
 // Gemini API integration
 export class GeminiService {
-  private static readonly API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+  private static readonly API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
   
   static async generatePrompt(formData: MusicFormData): Promise<string> {
     const apiKey = process.env.GEMINI_API_KEY;
@@ -582,7 +582,7 @@ export class SunoService {
       throw new Error('Suno API key not found');
     }
 
-    const url = `${this.SUNO_API_URL}/api/v1/get?taskId=${taskId}`;
+    const url = `${this.SUNO_API_URL}/api/v1/query?taskId=${taskId}`;
     
     const response = await fetch(url, {
       method: 'GET',
