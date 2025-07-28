@@ -288,28 +288,28 @@ export class SunoService {
   private static readonly SUNO_API_URL = process.env.SUNO_API_URL || 'https://api.sunoapi.org';
   private static readonly PROXY_URL = process.env.SUNO_PROXY_URL || 'https://suno-api-beta.vercel.app/api';
   
-  // 새로운 메서드: 음악 생성 시작 (즉시 taskId 반환)
+  // 새로운 메서드: 음악 생성 시작 (올바른 sunoapi.org 엔드포인트 사용)
   static async startMusicGeneration(prompt: string, duration: number = 30): Promise<{ taskId: string }> {
     const apiKey = process.env.SUNO_API_KEY;
     if (!apiKey) {
       throw new Error('Suno API key not found. Please set SUNO_API_KEY in environment variables.');
     }
 
-    console.log('🎼 Starting music generation task...');
+    console.log('🎼 Starting music generation with correct sunoapi.org endpoint...');
 
-    const endpoint = '/api/v1/generate';
-    const url = `${this.SUNO_API_URL}${endpoint}`;
+    const url = `${this.SUNO_API_URL}/api/v1/generate`;
     
     const requestBody = {
       prompt: prompt,
-      customMode: true,
-      instrumental: false,
-      wait_audio: false, // 즉시 taskId 반환
-      model: 'V3_5',
-      callBackUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/suno-callback`
+      model: 'v3.5', // sunoapi.org 지원 모델
+      wait_audio: false // 비동기 방식
     };
 
-    console.log('📤 Starting generation with request:', { prompt: prompt.substring(0, 100) + '...', wait_audio: false });
+    console.log('📤 Starting generation with request:', { 
+      prompt: prompt.substring(0, 100) + '...', 
+      model: requestBody.model,
+      wait_audio: requestBody.wait_audio 
+    });
     
     const response = await fetch(url, {
       method: 'POST',
@@ -331,12 +331,19 @@ export class SunoService {
     const result = await response.json();
     console.log('✅ Generation started successfully:', result);
 
-    if (result.code === 200 && result.data?.taskId) {
-      // 저장소에 작업 등록
-      const { callbackStorage } = await import('@/lib/storage');
-      await callbackStorage.registerTask(result.data.taskId);
+    // sunoapi.org 응답 형식에 맞춰 처리
+    if (result.success && result.data) {
+      const taskId = result.data[0]?.id || `task-${Date.now()}`;
       
-      return { taskId: result.data.taskId };
+      // 저장소에 작업 등록
+      try {
+        const { callbackStorage } = await import('@/lib/storage');
+        await callbackStorage.registerTask(taskId);
+      } catch (storageError) {
+        console.warn('Storage registration failed, continuing without it:', storageError);
+      }
+      
+      return { taskId: taskId };
     } else {
       console.error('Unexpected response format:', result);
       throw new Error(`Unexpected response format: ${JSON.stringify(result)}`);

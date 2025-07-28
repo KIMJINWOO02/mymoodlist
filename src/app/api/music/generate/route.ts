@@ -91,35 +91,70 @@ export async function POST(request: NextRequest) {
       hasFormData: !!formData
     });
 
-    // 임시로 즉시 데모 음악 제공 (API 문제 해결까지)
-    console.log('🎭 Providing demo music while API issues are resolved...');
-    
+    // SunoAPI.org를 사용한 실제 음악 생성 (수정된 엔드포인트)
     try {
-      const demoResult = await SunoService.generateDemoFallback(prompt, duration);
+      console.log('🎼 Starting music generation with SunoAPI.org...');
+      console.log('🔧 Environment check:', {
+        hasApiKey: !!process.env.SUNO_API_KEY,
+        apiKeyFirst10: process.env.SUNO_API_KEY?.substring(0, 10) + '...',
+        apiUrl: process.env.SUNO_API_URL
+      });
       
+      // 즉시 taskId 반환 방식으로 음악 생성 시작
+      const taskResult = await SunoService.startMusicGeneration(prompt, duration);
+      
+      console.log('✅ Music generation task started:', {
+        taskId: taskResult.taskId,
+        status: 'processing'
+      });
+
+      // taskId와 함께 즉시 응답 반환
       return corsResponse({
         success: true,
-        message: 'Music generated successfully (demo mode)',
-        provider: 'demo',
-        data: [{
-          id: demoResult.id,
-          title: sanitizeInput(demoResult.title || 'AI Generated Demo Music'),
-          audio_url: demoResult.audio_url,
-          image_url: demoResult.image_url,
-          status: demoResult.status,
-          duration: demoResult.duration || duration
-        }],
-        note: 'Demo mode active - working to restore full API functionality'
+        message: 'Music generation started with SunoAPI.org',
+        provider: 'sunoapi.org',
+        taskId: taskResult.taskId,
+        status: 'processing',
+        estimatedTime: '30-60 seconds',
+        pollUrl: `/api/suno-status/${taskResult.taskId}`
       }, 200, origin || undefined);
+
+    } catch (sunoError) {
+      console.error('❌ SunoAPI.org Error:', {
+        message: sunoError instanceof Error ? sunoError.message : sunoError,
+        stack: sunoError instanceof Error ? sunoError.stack : undefined
+      });
       
-    } catch (demoError) {
-      console.error('❌ Even demo fallback failed:', demoError);
+      // SunoAPI.org 실패시 데모 폴백 제공
+      console.log('🎭 Fallback to demo music due to API failure');
       
-      return corsResponse({
-        success: false,
-        error: 'Music generation temporarily unavailable',
-        details: 'Both API and demo systems are currently unavailable. Please try again later.'
-      }, 503, origin || undefined);
+      try {
+        const demoResult = await SunoService.generateDemoFallback(prompt, duration);
+        
+        return corsResponse({
+          success: true,
+          message: 'Music generation completed with demo fallback',
+          provider: 'demo',
+          data: [{
+            id: demoResult.id,
+            title: sanitizeInput(demoResult.title || 'AI Generated Demo Music'),
+            audio_url: demoResult.audio_url,
+            image_url: demoResult.image_url,
+            status: demoResult.status,
+            duration: demoResult.duration || duration
+          }],
+          note: 'Demo fallback used due to API issue'
+        }, 200, origin || undefined);
+        
+      } catch (demoError) {
+        console.error('❌ Even demo fallback failed:', demoError);
+        
+        return corsResponse({
+          success: false,
+          error: 'Music generation temporarily unavailable',
+          details: 'Both API and demo systems are currently unavailable. Please try again later.'
+        }, 503, origin || undefined);
+      }
     }
     
   } catch (error) {
