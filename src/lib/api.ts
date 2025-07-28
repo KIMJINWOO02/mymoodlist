@@ -301,7 +301,7 @@ export class SunoService {
     
     const requestBody = {
       prompt: prompt,
-      model: 'v3.5', // sunoapi.org 지원 모델
+      model: 'V3_5', // sunoapi.org 지원 모델 (올바른 형식)
       wait_audio: false, // 비동기 방식
       customMode: true // SunoAPI.org 필수 파라미터
     };
