@@ -70,12 +70,30 @@ export class AuthService {
     }
   }
 
-  // 현재 사용자 정보 가져오기
+  // 현재 사용자 정보 가져오기 (토큰 새로고침 포함)
   static async getCurrentUser(): Promise<AuthUser | null> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // 먼저 현재 세션 확인 및 토큰 새로고침 시도
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      if (!user) return null;
+      if (sessionError) {
+        console.warn('Session error, attempting to refresh:', sessionError.message);
+        // 세션 에러가 있으면 토큰 새로고침 시도
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) {
+          console.error('Token refresh failed:', refreshError.message);
+          // 새로고침 실패 시 로그아웃 처리
+          await this.signOut();
+          return null;
+        }
+      }
+
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        console.warn('Failed to get user:', userError?.message);
+        return null;
+      }
 
       // users 테이블에서 추가 정보 가져오기
       const { data: userData, error } = await supabase
@@ -84,7 +102,15 @@ export class AuthService {
         .eq('id', user.id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Failed to get user data from users table:', error.message);
+        // 사용자 테이블에 데이터가 없으면 기본값으로 생성
+        if (error.code === 'PGRST116') {
+          await this.createUserRecord(user);
+          return await this.getCurrentUser(); // 재귀 호출로 다시 시도
+        }
+        throw error;
+      }
 
       return {
         id: user.id,
@@ -97,6 +123,28 @@ export class AuthService {
     } catch (error: any) {
       console.error('Get current user error:', error);
       return null;
+    }
+  }
+
+  // 사용자 레코드 생성 (회원가입 시 자동 생성되지 않은 경우)
+  private static async createUserRecord(user: any) {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .insert({
+          id: user.id,
+          email: user.email,
+          full_name: user.user_metadata?.full_name || '',
+          tokens: 5, // 기본 토큰
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) {
+        console.error('Failed to create user record:', error);
+      }
+    } catch (error) {
+      console.error('Error creating user record:', error);
     }
   }
 
@@ -176,6 +224,87 @@ export class AuthService {
 
       return !!data;
     } catch (error) {
+      return false;
+    }
+  }
+
+  // 손상된 인증 토큰 정리
+  static async clearCorruptedAuth() {
+    try {
+      console.log('🧹 Clearing corrupted authentication data...');
+      
+      // 로컬 스토리지의 Supabase 세션 데이터 정리
+      if (typeof window !== 'undefined') {
+        const supabaseKeys = Object.keys(localStorage).filter(key => 
+          key.startsWith('sb-') || key.includes('supabase')
+        );
+        
+        supabaseKeys.forEach(key => {
+          localStorage.removeItem(key);
+          console.log(`Removed localStorage key: ${key}`);
+        });
+        
+        // 세션 스토리지도 정리
+        const sessionKeys = Object.keys(sessionStorage).filter(key => 
+          key.startsWith('sb-') || key.includes('supabase')
+        );
+        
+        sessionKeys.forEach(key => {
+          sessionStorage.removeItem(key);
+          console.log(`Removed sessionStorage key: ${key}`);
+        });
+      }
+      
+      // Supabase 세션 종료
+      await supabase.auth.signOut();
+      
+      console.log('✅ Corrupted authentication data cleared');
+      
+      // 페이지 새로고침으로 완전히 초기화
+      if (typeof window !== 'undefined') {
+        window.location.reload();
+      }
+      
+    } catch (error) {
+      console.error('Error clearing corrupted auth:', error);
+    }
+  }
+
+  // 인증 상태 복복
+  static async repairAuth() {
+    try {
+      console.log('🔧 Attempting to repair authentication...');
+      
+      // 현재 세션 상태 확인
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error('Session error detected:', error.message);
+        
+        // 세션 에러가 refresh token 관련이면 정리
+        if (error.message.includes('refresh') || error.message.includes('token')) {
+          await this.clearCorruptedAuth();
+          return false;
+        }
+      }
+      
+      if (!session) {
+        console.log('No active session found');
+        return false;
+      }
+      
+      // 사용자 정보 가져오기 시도
+      const user = await this.getCurrentUser();
+      if (user) {
+        console.log('✅ Authentication repaired successfully');
+        return true;
+      }
+      
+      return false;
+      
+    } catch (error) {
+      console.error('Auth repair failed:', error);
+      await this.clearCorruptedAuth();
       return false;
     }
   }

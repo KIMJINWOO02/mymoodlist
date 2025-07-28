@@ -4,7 +4,10 @@ import { GeminiService as NewGeminiService } from './gemini';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000',
-  timeout: 60000, // 60 seconds for music generation
+  timeout: 300000, // 5 minutes for music generation
+  headers: {
+    'Content-Type': 'application/json'
+  }
 });
 
 export class ApiService {
@@ -21,36 +24,64 @@ export class ApiService {
   }
 
   static async generateMusic(formData: MusicFormData, geminiPrompt: string): Promise<MusicGenerationResult> {
-    try {
-      // Gemini 프롬프트와 duration을 함께 전달
-      const requestData = {
-        prompt: geminiPrompt,
-        duration: formData.duration,
-        formData: formData
-      };
+    const maxRetries = 2;
+    let lastError: any;
 
-      const response = await api.post('/api/music/generate', requestData);
-      
-      if (!response.data.success) {
-        throw new ApiError(response.data.error || 'Music generation failed');
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🎵 Music generation attempt ${attempt}/${maxRetries}`);
+        
+        // Gemini 프롬프트와 duration을 함께 전달
+        const requestData = {
+          prompt: geminiPrompt,
+          duration: formData.duration,
+          formData: formData
+        };
+
+        const response = await api.post('/api/music/generate', requestData);
+        
+        if (!response.data.success) {
+          throw new ApiError(response.data.error || 'Music generation failed');
+        }
+
+        // Suno API 응답을 MusicGenerationResult 형태로 변환
+        const sunoData = response.data.data[0]; // 첫 번째 생성된 음악 선택
+        
+        console.log('✅ Music generation successful');
+        
+        return {
+          prompt: geminiPrompt, // Gemini가 생성한 프롬프트 유지
+          audioUrl: sunoData.audio_url,
+          title: sunoData.title,
+          duration: sunoData.duration || formData.duration,
+          imageUrl: sunoData.image_url
+        };
+      } catch (error: any) {
+        lastError = error;
+        console.error(`❌ Music generation attempt ${attempt} failed:`, error.message);
+        
+        // 마지막 시도가 아니고 타임아웃 에러인 경우 재시도
+        if (attempt < maxRetries && (
+          error.code === 'ECONNABORTED' || 
+          error.response?.status === 504 ||
+          error.response?.status === 503 ||
+          error.message.includes('timeout')
+        )) {
+          console.log(`⏳ Retrying in 2 seconds... (${attempt}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          continue;
+        }
+        
+        // 다른 에러는 즉시 throw
+        break;
       }
-
-      // Suno API 응답을 MusicGenerationResult 형태로 변환
-      const sunoData = response.data.data[0]; // 첫 번째 생성된 음악 선택
-      
-      // 서버에서 이미 폴링 완료 - 클라이언트 폴링 제거됨
-      
-      return {
-        prompt: geminiPrompt, // Gemini가 생성한 프롬프트 유지
-        audioUrl: sunoData.audio_url,
-        title: sunoData.title,
-        duration: sunoData.duration || formData.duration,
-        imageUrl: sunoData.image_url
-      };
-    } catch (error) {
-      console.error('Error generating music:', error);
-      throw new ApiError('Failed to generate music', (error as any)?.response?.status);
     }
+
+    console.error('❌ All music generation attempts failed');
+    throw new ApiError(
+      lastError?.response?.data?.error || lastError?.message || 'Failed to generate music', 
+      lastError?.response?.status
+    );
   }
 
   // 음악 생성 완료를 위한 폴링 함수

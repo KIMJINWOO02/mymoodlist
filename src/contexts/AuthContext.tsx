@@ -13,6 +13,8 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<void>;
   updateProfile: (updates: { full_name?: string; avatar_url?: string }) => Promise<AuthUser | null>;
   refreshUser: () => Promise<void>;
+  repairAuth: () => Promise<boolean>;
+  clearCorruptedAuth: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,10 +39,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // 초기 사용자 상태 확인
     const initializeAuth = async () => {
       try {
-        const currentUser = await AuthService.getCurrentUser();
+        let currentUser = await AuthService.getCurrentUser();
+        
+        // 사용자 정보를 가져올 수 없으면 인증 복구 시도
+        if (!currentUser) {
+          console.log('🔧 Attempting to repair authentication...');
+          const repaired = await AuthService.repairAuth();
+          if (repaired) {
+            currentUser = await AuthService.getCurrentUser();
+          }
+        }
+        
         setUser(currentUser);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Auth initialization error:', error);
+        
+        // refresh token 에러인 경우 정리
+        if (error?.message?.includes('refresh') || error?.message?.includes('Invalid Refresh Token')) {
+          console.log('🧹 Clearing corrupted auth data due to refresh token error');
+          await AuthService.clearCorruptedAuth();
+        }
       } finally {
         setLoading(false);
       }
@@ -112,6 +130,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const repairAuth = async () => {
+    try {
+      const repaired = await AuthService.repairAuth();
+      if (repaired) {
+        const currentUser = await AuthService.getCurrentUser();
+        setUser(currentUser);
+      }
+      return repaired;
+    } catch (error) {
+      console.error('Repair auth error:', error);
+      return false;
+    }
+  };
+
+  const clearCorruptedAuth = async () => {
+    try {
+      await AuthService.clearCorruptedAuth();
+      setUser(null);
+    } catch (error) {
+      console.error('Clear corrupted auth error:', error);
+    }
+  };
+
   const value: AuthContextType = {
     user,
     loading,
@@ -122,6 +163,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     resetPassword,
     updateProfile,
     refreshUser,
+    repairAuth,
+    clearCorruptedAuth,
   };
 
   return (
