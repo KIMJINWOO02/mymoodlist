@@ -13,6 +13,9 @@ export async function GET(request: NextRequest) {
       GEMINI_API_KEY: !!process.env.GEMINI_API_KEY,
       GEMINI_API_KEY_LENGTH: process.env.GEMINI_API_KEY?.length || 0,
       NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL || 'default',
+      NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || 'default',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      SUPABASE_ANON_KEY_LENGTH: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length || 0,
       NODE_ENV: process.env.NODE_ENV
     };
     
