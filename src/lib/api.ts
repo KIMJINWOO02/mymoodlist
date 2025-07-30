@@ -345,14 +345,27 @@ export class SunoService {
 
     console.log(`📡 Generation start response status:`, response.status);
 
+    console.log(`📡 Response status: ${response.status} ${response.statusText}`);
+    
     if (!response.ok) {
       const errorText = await response.text();
       console.error('❌ SunoAPI.org generation start error:', errorText);
       throw new Error(`SunoAPI.org error: ${response.status} - ${errorText}`);
     }
 
-    const result = await response.json();
-    console.log('✅ Generation started successfully:', result);
+    // 더 안전한 JSON 파싱
+    const responseText = await response.text();
+    console.log('📄 Raw response text:', responseText.substring(0, 500) + '...');
+    
+    let result;
+    try {
+      result = JSON.parse(responseText);
+      console.log('✅ Generation started successfully:', result);
+    } catch (parseError) {
+      console.error('❌ JSON parsing failed:', parseError);
+      console.error('📄 Response text that failed to parse:', responseText);
+      throw new Error(`JSON parsing failed: ${parseError}`);
+    }
 
     // sunoapi.org 실제 응답 형식에 맞춰 처리
     if (result.code === 200 && result.data && result.data.taskId) {
