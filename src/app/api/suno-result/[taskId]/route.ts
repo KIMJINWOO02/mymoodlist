@@ -158,10 +158,12 @@ async function checkSunoTaskStatusDirect(taskId: string) {
   
   try {
     console.log('📡 Checking Suno API status for taskId:', taskId);
+    console.log('🔧 Using API URL:', `${apiUrl}/api/v1/query?taskId=${taskId}`);
+    console.log('🔑 API Key available:', !!apiKey, 'Length:', apiKey?.length);
     
     // SunoAPI.org의 query 엔드포인트 사용
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10초 타임아웃
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15초 타임아웃으로 증가
     
     const response = await fetch(`${apiUrl}/api/v1/query?taskId=${taskId}`, {
       method: 'GET',
@@ -171,6 +173,8 @@ async function checkSunoTaskStatusDirect(taskId: string) {
       },
       signal: controller.signal
     });
+    
+    console.log('📡 Suno API Response Status:', response.status, response.statusText);
     
     clearTimeout(timeoutId);
     

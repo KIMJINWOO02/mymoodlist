@@ -323,14 +323,15 @@ export class SunoService {
       title: "AI Generated Music", 
       customMode: true,
       instrumental: false,
-      model: "V3_5",
-      callBackUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://mymoodlist.com'}/api/suno-callback`
+      model: "V3_5"
+      // callBackUrl 제거 - 직접 폴링만 사용
     };
 
     console.log('📤 Starting generation with request:', { 
       prompt: prompt.substring(0, 100) + '...', 
       model: requestBody.model,
-      wait_audio: requestBody.wait_audio 
+      customMode: requestBody.customMode,
+      callBackUrl: requestBody.callBackUrl
     });
     
     const response = await fetch(url, {
