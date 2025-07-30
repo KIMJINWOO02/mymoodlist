@@ -323,8 +323,8 @@ export class SunoService {
       title: "AI Generated Music", 
       customMode: true,
       instrumental: false,
-      model: "V3_5"
-      // callBackUrl 제거 - 직접 폴링만 사용
+      model: "V3_5",
+      callBackUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://mymoodlist.com'}/api/suno-callback`
     };
 
     console.log('📤 Starting generation with request:', { 
