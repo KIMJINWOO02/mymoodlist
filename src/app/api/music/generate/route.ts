@@ -139,6 +139,9 @@ export async function POST(request: NextRequest) {
         taskId: taskId,
         status: 'processing'
       });
+      
+      console.log('🔍 IMPORTANT: Client will poll for TaskId:', taskId);
+      console.log('🔍 IMPORTANT: Make sure this matches database TaskId!');
 
       // taskId와 함께 즉시 응답 반환
       return corsResponse({
