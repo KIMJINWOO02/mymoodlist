@@ -120,32 +120,18 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // 임시 디버깅: 즉시 데모 모드 활성화
-    console.log('🐛 DEBUGGING: Forcing demo mode for testing');
+    // 환경변수 상세 확인
+    console.log('🔍 DETAILED Environment Check:', {
+      NODE_ENV: process.env.NODE_ENV,
+      hasApiKey: !!process.env.SUNO_API_KEY,
+      apiKeyLength: process.env.SUNO_API_KEY?.length,
+      apiKeyPrefix: process.env.SUNO_API_KEY?.substring(0, 8) + '...',
+      apiUrl: process.env.SUNO_API_URL,
+      baseUrl: process.env.NEXT_PUBLIC_BASE_URL,
+      allEnvKeys: Object.keys(process.env).filter(k => k.includes('SUNO'))
+    });
     
-    try {
-      const demoResult = await SunoService.generateDemoFallback(prompt, duration);
-      
-      return corsResponse({
-        success: true,
-        message: 'Music generation completed with demo (DEBUG MODE)',
-        provider: 'demo_debug',
-        data: [{
-          id: demoResult.id,
-          title: sanitizeInput(demoResult.title || 'Debug Demo Music'),
-          audio_url: demoResult.audio_url,
-          image_url: demoResult.image_url,
-          status: demoResult.status,
-          duration: demoResult.duration || duration
-        }],
-        note: 'Debug mode: Bypassing Suno API temporarily'
-      }, 200, origin || undefined);
-      
-    } catch (debugDemoError) {
-      console.error('❌ Even demo mode failed:', debugDemoError);
-    }
-    
-    // SunoAPI.org를 사용한 실제 음악 생성 시도 (임시 비활성화)
+    // SunoAPI.org를 사용한 실제 음악 생성 시도
     let taskId: string | null = null;
     
     try {
@@ -229,13 +215,35 @@ export async function POST(request: NextRequest) {
         }
       }
       
-      // 다른 에러의 경우 기본 에러 응답
-      return corsResponse({
-        success: false,
-        error: 'Music generation temporarily unavailable',
-        details: 'Please try again in a few moments. If the problem persists, contact support.',
-        canRetry: true
-      }, 503, origin || undefined);
+      // 다른 에러의 경우 - 즉시 데모 폴백 제공
+      console.log('🎭 Other error occurred, providing immediate demo fallback...');
+      try {
+        const fallbackResult = await SunoService.generateDemoFallback(prompt, duration);
+        
+        return corsResponse({
+          success: true,
+          message: 'Music generation completed with demo (Suno API issue)',
+          provider: 'demo_fallback',
+          data: [{
+            id: fallbackResult.id,
+            title: sanitizeInput(fallbackResult.title || 'AI Generated Demo Music'),
+            audio_url: fallbackResult.audio_url,
+            image_url: fallbackResult.image_url,
+            status: fallbackResult.status,
+            duration: fallbackResult.duration || duration
+          }],
+          note: 'Demo provided due to Suno API connectivity issue'
+        }, 200, origin || undefined);
+        
+      } catch (fallbackError) {
+        console.error('❌ Final fallback also failed:', fallbackError);
+        return corsResponse({
+          success: false,
+          error: 'Music generation temporarily unavailable',
+          details: 'Please try again in a few moments. If the problem persists, contact support.',
+          canRetry: true
+        }, 503, origin || undefined);
+      }
     }
     
   } catch (error) {
