@@ -91,7 +91,9 @@ export async function POST(request: NextRequest) {
       hasFormData: !!formData
     });
 
-    // SunoAPI.org를 사용한 실제 음악 생성 (수정된 엔드포인트)
+    // SunoAPI.org를 사용한 실제 음악 생성 시도
+    let taskId: string | null = null;
+    
     try {
       console.log('🎼 Starting music generation with SunoAPI.org...');
       console.log('🔧 Environment check:', {
@@ -102,9 +104,10 @@ export async function POST(request: NextRequest) {
       
       // 즉시 taskId 반환 방식으로 음악 생성 시작
       const taskResult = await SunoService.startMusicGeneration(prompt, duration);
+      taskId = taskResult.taskId;
       
       console.log('✅ Music generation task started:', {
-        taskId: taskResult.taskId,
+        taskId: taskId,
         status: 'processing'
       });
 
@@ -113,10 +116,11 @@ export async function POST(request: NextRequest) {
         success: true,
         message: 'Music generation started with SunoAPI.org',
         provider: 'sunoapi.org',
-        taskId: taskResult.taskId,
+        taskId: taskId,
         status: 'processing',
         estimatedTime: '30-60 seconds',
-        pollUrl: `/api/suno-status/${taskResult.taskId}`
+        pollUrl: `/api/suno-result/${taskId}`,
+        fallbackAvailable: true // 클라이언트에게 폴백 가능함을 알림
       }, 200, origin || undefined);
 
     } catch (sunoError) {
@@ -125,36 +129,46 @@ export async function POST(request: NextRequest) {
         stack: sunoError instanceof Error ? sunoError.stack : undefined
       });
       
-      // SunoAPI.org 실패시 데모 폴백 제공
-      console.log('🎭 Fallback to demo music due to API failure');
+      // API 키 관련 에러인지 확인
+      const isApiKeyError = sunoError instanceof Error && 
+        (sunoError.message.includes('API key') || 
+         sunoError.message.includes('401') || 
+         sunoError.message.includes('403') ||
+         sunoError.message.includes('unauthorized'));
       
-      try {
-        const demoResult = await SunoService.generateDemoFallback(prompt, duration);
+      if (isApiKeyError) {
+        console.log('🔑 API key issue detected, providing immediate demo fallback');
         
-        return corsResponse({
-          success: true,
-          message: 'Music generation completed with demo fallback',
-          provider: 'demo',
-          data: [{
-            id: demoResult.id,
-            title: sanitizeInput(demoResult.title || 'AI Generated Demo Music'),
-            audio_url: demoResult.audio_url,
-            image_url: demoResult.image_url,
-            status: demoResult.status,
-            duration: demoResult.duration || duration
-          }],
-          note: 'Demo fallback used due to API issue'
-        }, 200, origin || undefined);
-        
-      } catch (demoError) {
-        console.error('❌ Even demo fallback failed:', demoError);
-        
-        return corsResponse({
-          success: false,
-          error: 'Music generation temporarily unavailable',
-          details: 'Both API and demo systems are currently unavailable. Please try again later.'
-        }, 503, origin || undefined);
+        try {
+          const demoResult = await SunoService.generateDemoFallback(prompt, duration);
+          
+          return corsResponse({
+            success: true,
+            message: 'Music generation completed with demo (API key issue)',
+            provider: 'demo_immediate',
+            data: [{
+              id: demoResult.id,
+              title: sanitizeInput(demoResult.title || 'AI Generated Demo Music'),
+              audio_url: demoResult.audio_url,
+              image_url: demoResult.image_url,
+              status: demoResult.status,
+              duration: demoResult.duration || duration
+            }],
+            note: 'Demo provided immediately due to API authentication issue'
+          }, 200, origin || undefined);
+          
+        } catch (demoError) {
+          console.error('❌ Immediate demo fallback failed:', demoError);
+        }
       }
+      
+      // 다른 에러의 경우 기본 에러 응답
+      return corsResponse({
+        success: false,
+        error: 'Music generation temporarily unavailable',
+        details: 'Please try again in a few moments. If the problem persists, contact support.',
+        canRetry: true
+      }, 503, origin || undefined);
     }
     
   } catch (error) {

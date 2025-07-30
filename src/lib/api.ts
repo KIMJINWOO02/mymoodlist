@@ -96,7 +96,7 @@ export class ApiService {
 
   // 음악 생성 완료를 위한 폴링 함수
   static async pollForCompletion(taskId: string, prompt: string, duration: number): Promise<MusicGenerationResult> {
-    const maxAttempts = 18; // 3분 최대 대기 (10초 간격)
+    const maxAttempts = 15; // 최대 15번 시도 (약 3분)
     const baseInterval = 10000; // 10초 기본 간격
     let pollInterval = baseInterval;
     
@@ -115,78 +115,81 @@ export class ApiService {
         }
         
         try {
-        // 첫 번째 시도가 아니면 대기
-        if (attempt > 0) {
-          console.log(`⏳ Polling attempt ${attempt + 1}/${maxAttempts}, waiting ${pollInterval/1000}s...`);
-          await new Promise(resolve => setTimeout(resolve, pollInterval));
-        }
-        
-        // 상태 확인 (폴링 전용 API 사용)
-        console.log(`🔍 Checking status for taskId: ${taskId}`);
-        const statusResponse = await pollingApi.get(`/api/suno-result/${taskId}`);
-        
-        console.log(`📡 Status response:`, statusResponse.data);
-        
-        if (statusResponse.data.success && statusResponse.data.data) {
-          const result = statusResponse.data.data;
-          
-          if (result.status === 'completed' && result.audio_url) {
-            console.log('✅ Music generation completed successfully!');
-            return {
-              prompt: prompt,
-              audioUrl: result.audio_url,
-              title: result.title || 'AI Generated Music',
-              duration: result.duration || duration,
-              imageUrl: result.image_url
-            };
-          } else if (result.status === 'failed') {
-            console.error('❌ Music generation failed on server');
-            throw new ApiError('Music generation failed on server');
+          // 첫 번째 시도가 아니면 대기
+          if (attempt > 0) {
+            console.log(`⏳ Polling attempt ${attempt + 1}/${maxAttempts}, waiting ${pollInterval/1000}s...`);
+            await new Promise(resolve => setTimeout(resolve, pollInterval));
           }
           
-          // processing 상태면 계속 대기
-          console.log(`⏳ Still processing... (${result.status || 'unknown'})`);
-        } else {
-          console.log('⚠️ No data in response, continuing to poll...');
-        }
-        
-        // 점진적으로 폴링 간격 증가 (백오프)
-        pollInterval = Math.min(pollInterval * 1.2, 20000); // 최대 20초
-        
-      } catch (error: any) {
-        console.warn(`⚠️ Polling attempt ${attempt + 1} failed:`, error.message);
-        
-        // 404나 네트워크 에러는 재시도
-        if (error.response?.status === 404 || error.code === 'NETWORK_ERROR') {
-          console.log('🔄 Retrying due to network/404 error...');
-          continue;
-        }
-        
-        // 마지막 시도라면 에러 발생
-        if (attempt === maxAttempts - 1) {
-          console.error('❌ All polling attempts exhausted');
-          break;
+          // 상태 확인 (폴링 전용 API 사용)
+          console.log(`🔍 Checking status for taskId: ${taskId}`);
+          const statusResponse = await pollingApi.get(`/api/suno-result/${taskId}`);
+          
+          console.log(`📡 Status response:`, statusResponse.data);
+          
+          if (statusResponse.data.success && statusResponse.data.data) {
+            const result = statusResponse.data.data;
+            
+            if (result.status === 'completed' && result.audio_url) {
+              console.log('✅ Music generation completed successfully!');
+              return {
+                prompt: prompt,
+                audioUrl: result.audio_url,
+                title: result.title || 'AI Generated Music',
+                duration: result.duration || duration,
+                imageUrl: result.image_url
+              };
+            } else if (result.status === 'failed') {
+              console.error('❌ Music generation failed on server');
+              // 실패한 경우 즉시 데모 폴백 제공
+              console.log('🎭 Providing demo fallback due to generation failure');
+              break;
+            }
+            
+            // processing 상태면 계속 대기
+            console.log(`⏳ Still processing... (${result.status || 'unknown'})`);
+          } else {
+            console.log('⚠️ No data in response, continuing to poll...');
+          }
+          
+          // 점진적으로 폴링 간격 증가 (백오프) - 단, 최대 15초로 제한
+          pollInterval = Math.min(pollInterval * 1.1, 15000);
+          
+        } catch (error: any) {
+          console.warn(`⚠️ Polling attempt ${attempt + 1} failed:`, error.message);
+          
+          // 404나 네트워크 에러는 재시도
+          if (error.response?.status === 404 || error.code === 'NETWORK_ERROR') {
+            console.log('🔄 Retrying due to network/404 error...');
+            continue;
+          }
+          
+          // 마지막 시도라면 데모 폴백으로 이동
+          if (attempt === maxAttempts - 1) {
+            console.error('❌ All polling attempts exhausted');
+            break;
+          }
         }
       }
-    }
-    
-    // 타임아웃 시 데모 폴백 제공
-    console.log('⏰ Polling timeout, providing demo fallback');
-    try {
-      const demoResult = await SunoService.generateDemoFallback(prompt, duration);
-      console.log('🎭 Demo fallback provided successfully');
       
-      return {
-        prompt: prompt,
-        audioUrl: demoResult.audio_url,
-        title: demoResult.title || 'Demo Music (Generation Timeout)',
-        duration: demoResult.duration || duration,
-        imageUrl: demoResult.image_url
-      };
-    } catch (demoError) {
-      console.error('❌ Demo fallback also failed:', demoError);
-      throw new ApiError('Music generation timeout and demo fallback failed - please try again');
-    }
+      // 타임아웃 또는 실패 시 데모 폴백 제공
+      console.log('⏰ Polling timeout or failure, providing demo fallback');
+      try {
+        const demoResult = await SunoService.generateDemoFallback(prompt, duration);
+        console.log('🎭 Demo fallback provided successfully');
+        
+        return {
+          prompt: prompt,
+          audioUrl: demoResult.audio_url,
+          title: demoResult.title || 'Demo Music (Generation Timeout)',
+          duration: demoResult.duration || duration,
+          imageUrl: demoResult.image_url
+        };
+      } catch (demoError) {
+        console.error('❌ Demo fallback also failed:', demoError);
+        throw new ApiError('Music generation timeout and demo fallback failed - please try again');
+      }
+      
     } finally {
       // 폴링 완료 시 컨트롤러 정리
       this.pollingControllers.delete(taskId);
