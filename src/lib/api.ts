@@ -96,7 +96,7 @@ export class ApiService {
 
   // 음악 생성 완료를 위한 폴링 함수
   static async pollForCompletion(taskId: string, prompt: string, duration: number): Promise<MusicGenerationResult> {
-    const maxAttempts = 8; // 최대 8번 시도로 단축 (약 1.5분)
+    const maxAttempts = 12; // 최대 12번 시도 (약 2.5분)로 증가
     const baseInterval = 10000; // 10초 기본 간격
     let pollInterval = baseInterval;
     

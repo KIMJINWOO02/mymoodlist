@@ -180,18 +180,33 @@ async function checkSunoTaskStatusDirect(taskId: string) {
     }
     
     const result = await response.json();
-    console.log('📥 Suno API raw response:', result);
+    console.log('📥 Suno API raw response:', JSON.stringify(result, null, 2));
     
     if (result.code === 200 && result.data) {
+      const sunoData = result.data;
+      console.log('🔍 Parsed Suno data:', {
+        status: sunoData.status,
+        hasAudioUrl: !!sunoData.audio_url,
+        title: sunoData.title,
+        created_at: sunoData.created_at,
+        model_name: sunoData.model_name
+      });
+      
       return {
         id: taskId,
-        status: result.data.status === 'complete' ? 'completed' : result.data.status,
-        audio_url: result.data.audio_url,
-        title: result.data.title,
-        duration: result.data.duration,
-        image_url: result.data.image_url,
-        error: result.data.error
+        status: sunoData.status === 'complete' ? 'completed' : sunoData.status,
+        audio_url: sunoData.audio_url,
+        title: sunoData.title,
+        duration: sunoData.duration,
+        image_url: sunoData.image_url,
+        error: sunoData.error
       };
+    } else {
+      console.log('❌ Unexpected Suno API response format:', {
+        code: result.code,
+        hasData: !!result.data,
+        message: result.message
+      });
     }
     
     return null;
