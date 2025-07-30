@@ -419,7 +419,7 @@ export class SunoService {
       instrumental: false,
       wait_audio: false,     // 비동기로 변경 - taskId만 받고 폴링으로 확인
       model: 'V3_5',        // SunoAPI.org 지원 모델명
-      callBackUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/suno-callback`
+      callBackUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://mymoodlist.com'}/api/suno-callback`
     };
 
     console.log('📤 Request body:', requestBody);
