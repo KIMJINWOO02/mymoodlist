@@ -355,20 +355,19 @@ export class SunoService {
 
     // sunoapi.org 실제 응답 형식에 맞춰 처리
     if (result.code === 200 && result.data && result.data.taskId) {
+      // Suno가 반환한 실제 TaskId 사용
       const actualTaskId = result.data.taskId;
       
-      console.log('✅ Suno returned actual taskId:', actualTaskId);
-      console.log('📝 Original taskId was:', taskId, 'but using Suno taskId:', actualTaskId);
+      console.log('✅ Suno returned taskId:', actualTaskId);
       
       // 실제 Suno TaskId로 저장소에 작업 등록
       try {
         const { callbackStorage } = await import('@/lib/storage');
         await callbackStorage.registerTask(actualTaskId);
       } catch (storageError) {
-        console.warn('Storage registration failed, continuing without it:', storageError);
+        console.warn('Storage registration failed:', storageError);
       }
       
-      // Suno가 반환한 실제 TaskId 사용
       return { taskId: actualTaskId };
     } else {
       console.error('Unexpected response format:', result);
