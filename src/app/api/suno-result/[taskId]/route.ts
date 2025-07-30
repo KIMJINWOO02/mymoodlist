@@ -165,12 +165,19 @@ async function checkSunoTaskStatusDirect(taskId: string) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000); // 15초 타임아웃으로 증가
     
-    // 여러 가능한 엔드포인트 시도
+    // 여러 가능한 엔드포인트 시도 (더 많은 조합)
     const possibleEndpoints = [
       `${apiUrl}/api/v1/query?taskId=${taskId}`,
       `${apiUrl}/api/v1/get?ids=${taskId}`,
+      `${apiUrl}/api/v1/get?taskId=${taskId}`,
+      `${apiUrl}/api/v1/status?taskId=${taskId}`,
+      `${apiUrl}/api/v1/check?taskId=${taskId}`,
       `${apiUrl}/api/get?ids=${taskId}`,
-      `${apiUrl}/query?taskId=${taskId}`
+      `${apiUrl}/api/status?taskId=${taskId}`,
+      `${apiUrl}/query?taskId=${taskId}`,
+      `${apiUrl}/get?taskId=${taskId}`,
+      `${apiUrl}/status/${taskId}`,
+      `${apiUrl}/task/${taskId}`
     ];
     
     let response = null;

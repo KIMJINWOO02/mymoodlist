@@ -17,7 +17,8 @@ export async function POST(request: NextRequest) {
     console.log('🔍 CALLBACK TaskId extraction attempt...');
     
     // taskId 추출 (여러 가능한 필드에서)
-    const taskId = body.taskId || body.task_id || body.id || body.requestId;
+    const taskId = body.taskId || body.task_id || body.id || body.requestId || 
+                   body.data?.task_id || body.data?.taskId || body.data?.id;
     
     console.log('🔍 Extracted TaskId:', taskId);
     console.log('🔍 Available fields:', Object.keys(body));
