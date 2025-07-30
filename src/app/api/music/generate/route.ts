@@ -120,7 +120,32 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // SunoAPI.org를 사용한 실제 음악 생성 시도
+    // 임시 디버깅: 즉시 데모 모드 활성화
+    console.log('🐛 DEBUGGING: Forcing demo mode for testing');
+    
+    try {
+      const demoResult = await SunoService.generateDemoFallback(prompt, duration);
+      
+      return corsResponse({
+        success: true,
+        message: 'Music generation completed with demo (DEBUG MODE)',
+        provider: 'demo_debug',
+        data: [{
+          id: demoResult.id,
+          title: sanitizeInput(demoResult.title || 'Debug Demo Music'),
+          audio_url: demoResult.audio_url,
+          image_url: demoResult.image_url,
+          status: demoResult.status,
+          duration: demoResult.duration || duration
+        }],
+        note: 'Debug mode: Bypassing Suno API temporarily'
+      }, 200, origin || undefined);
+      
+    } catch (debugDemoError) {
+      console.error('❌ Even demo mode failed:', debugDemoError);
+    }
+    
+    // SunoAPI.org를 사용한 실제 음악 생성 시도 (임시 비활성화)
     let taskId: string | null = null;
     
     try {
@@ -156,9 +181,19 @@ export async function POST(request: NextRequest) {
       }, 200, origin || undefined);
 
     } catch (sunoError) {
-      console.error('❌ SunoAPI.org Error:', {
+      console.error('❌ SunoAPI.org Error DETAILED:', {
         message: sunoError instanceof Error ? sunoError.message : sunoError,
-        stack: sunoError instanceof Error ? sunoError.stack : undefined
+        stack: sunoError instanceof Error ? sunoError.stack : undefined,
+        type: typeof sunoError,
+        fullError: sunoError
+      });
+      
+      // 더 자세한 디버깅 정보
+      console.error('🔍 Environment variables check:', {
+        hasApiKey: !!process.env.SUNO_API_KEY,
+        apiKeyLength: process.env.SUNO_API_KEY?.length,
+        apiUrl: process.env.SUNO_API_URL,
+        baseUrl: process.env.NEXT_PUBLIC_BASE_URL
       });
       
       // API 키 관련 에러인지 확인
