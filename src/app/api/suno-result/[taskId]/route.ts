@@ -25,9 +25,9 @@ export async function GET(
       title: result.title
     } : 'null');
     
-    // 2단계: 저장소에 결과가 없으면 Suno API에 직접 상태 확인
+    // 2단계: 저장소에 결과가 없거나 pending이면 ALWAYS Suno API에 직접 상태 확인
     if (!result || result.status === 'pending') {
-      console.log('🔍 No local result found, checking Suno API directly for taskId:', taskId);
+      console.log('🔍 Always checking Suno API directly for taskId:', taskId);
       
       try {
         // Suno API에 직접 상태 확인
