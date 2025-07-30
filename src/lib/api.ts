@@ -319,10 +319,11 @@ export class SunoService {
     
     const requestBody = {
       prompt: prompt,
-      model: 'V3_5', // sunoapi.org 지원 모델 (올바른 형식)
-      wait_audio: false, // 비동기 방식
-      customMode: true, // SunoAPI.org 필수 파라미터
-      instrumental: false, // 가사 포함 음악 생성
+      style: "AI Generated",
+      title: "AI Generated Music", 
+      customMode: true,
+      instrumental: false,
+      model: "V3_5",
       callBackUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://mymoodlist.com'}/api/suno-callback`
     };
 
@@ -415,10 +416,11 @@ export class SunoService {
     
     const requestBody = {
       prompt: prompt,
-      customMode: true,      // SunoAPI.org 필수 파라미터
+      style: "AI Generated",
+      title: "AI Generated Music",
+      customMode: true,
       instrumental: false,
-      wait_audio: false,     // 비동기로 변경 - taskId만 받고 폴링으로 확인
-      model: 'V3_5',        // SunoAPI.org 지원 모델명
+      model: "V3_5",
       callBackUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://mymoodlist.com'}/api/suno-callback`
     };
 

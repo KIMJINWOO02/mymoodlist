@@ -91,6 +91,35 @@ export async function POST(request: NextRequest) {
       hasFormData: !!formData
     });
 
+    // 데모 모드는 환경변수로만 제어 (기본값: false)
+    const DEMO_MODE = process.env.FORCE_DEMO_MODE === 'true';
+    
+    if (DEMO_MODE) {
+      console.log('🎭 Demo mode enabled, providing immediate demo music');
+      
+      try {
+        const demoResult = await SunoService.generateDemoFallback(prompt, duration);
+        
+        return corsResponse({
+          success: true,
+          message: 'Music generation completed with demo (Demo mode enabled)',
+          provider: 'demo_immediate',
+          data: [{
+            id: demoResult.id,
+            title: sanitizeInput(demoResult.title || 'AI Generated Demo Music'),
+            audio_url: demoResult.audio_url,
+            image_url: demoResult.image_url,
+            status: demoResult.status,
+            duration: demoResult.duration || duration
+          }],
+          note: 'Demo mode is currently enabled for faster response'
+        }, 200, origin || undefined);
+        
+      } catch (demoError) {
+        console.error('❌ Demo mode also failed:', demoError);
+      }
+    }
+    
     // SunoAPI.org를 사용한 실제 음악 생성 시도
     let taskId: string | null = null;
     
