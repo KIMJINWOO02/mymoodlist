@@ -10,10 +10,10 @@ const api = axios.create({
   }
 });
 
-// 폴링 전용 API 인스턴스 (더 짧은 타임아웃)
+// 폴링 전용 API 인스턴스 (더 긴 타임아웃)
 const pollingApi = axios.create({
   baseURL: process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000',
-  timeout: 15000, // 15 seconds for polling requests
+  timeout: 30000, // 30초로 증가 (timeout 방지)
   headers: {
     'Content-Type': 'application/json'
   }
