@@ -2,11 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { callbackStorage } from '@/lib/storage';
 
 export async function POST(request: NextRequest) {
+  // 콜백 수신 시각 기록
+  const receivedTime = new Date().toISOString();
+  console.log(`🎵 CALLBACK RECEIVED AT ${receivedTime}!!!`);
+  console.log('📡 Request headers:', Object.fromEntries(request.headers.entries()));
+  console.log('🌐 Request URL:', request.url);
+  console.log('🔗 Request method:', request.method);
+  
   try {
     const body = await request.json();
     
-    console.log('🎵 CALLBACK RECEIVED!!! Suno callback received:', body);
-    console.log('📄 CALLBACK DATA:', JSON.stringify(body, null, 2));
+    console.log('🎵 SUNO CALLBACK DATA RECEIVED:', body);
+    console.log('📄 FULL CALLBACK JSON:', JSON.stringify(body, null, 2));
     console.log('🔍 CALLBACK TaskId extraction attempt...');
     
     // taskId 추출 (여러 가능한 필드에서)
@@ -48,8 +55,20 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
+  console.log('🔍 GET request to suno-callback endpoint at:', new Date().toISOString());
   return NextResponse.json({
     message: 'Suno callback endpoint is ready',
     timestamp: new Date().toISOString()
   });
+}
+
+// 모든 HTTP 메서드 처리
+export async function PUT(request: NextRequest) {
+  console.log('🔍 PUT request to suno-callback:', new Date().toISOString());
+  return POST(request);
+}
+
+export async function PATCH(request: NextRequest) {
+  console.log('🔍 PATCH request to suno-callback:', new Date().toISOString());
+  return POST(request);
 }
