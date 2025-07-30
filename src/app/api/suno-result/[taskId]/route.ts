@@ -165,14 +165,46 @@ async function checkSunoTaskStatusDirect(taskId: string) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000); // 15초 타임아웃으로 증가
     
-    const response = await fetch(`${apiUrl}/api/v1/query?taskId=${taskId}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      signal: controller.signal
-    });
+    // 여러 가능한 엔드포인트 시도
+    const possibleEndpoints = [
+      `${apiUrl}/api/v1/query?taskId=${taskId}`,
+      `${apiUrl}/api/v1/get?ids=${taskId}`,
+      `${apiUrl}/api/get?ids=${taskId}`,
+      `${apiUrl}/query?taskId=${taskId}`
+    ];
+    
+    let response = null;
+    let workingEndpoint = null;
+    
+    for (const endpoint of possibleEndpoints) {
+      try {
+        console.log(`📡 Trying endpoint: ${endpoint}`);
+        response = await fetch(endpoint, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          signal: controller.signal
+        });
+        
+        console.log(`📡 Response status for ${endpoint}: ${response.status}`);
+        
+        if (response.ok) {
+          workingEndpoint = endpoint;
+          console.log(`✅ Working endpoint found: ${endpoint}`);
+          break;
+        }
+      } catch (endpointError) {
+        console.log(`❌ Endpoint ${endpoint} failed:`, endpointError.message);
+        continue;
+      }
+    }
+    
+    if (!response || !response.ok) {
+      console.warn('⚠️ All Suno API endpoints failed');
+      return null;
+    }
     
     console.log('📡 Suno API Response Status:', response.status, response.statusText);
     

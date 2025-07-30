@@ -48,12 +48,17 @@ class CallbackStorage {
   async saveCallback(taskId: string, callbackData: any): Promise<void> {
     console.log('💾 Saving callback data for task:', taskId);
     
-    // 기존 데이터 조회
-    const { data: existing } = await this.supabaseClient
+    // 기존 데이터 조회 (안전하게)
+    const { data: existingArray, error: selectError } = await this.supabaseClient
       .from('music_generation_tasks')
       .select('*')
-      .eq('task_id', taskId)
-      .single();
+      .eq('task_id', taskId);
+    
+    const existing = existingArray && existingArray.length > 0 ? existingArray[0] : null;
+    
+    if (selectError) {
+      console.warn('⚠️ Error checking existing task:', selectError);
+    }
 
     if (!existing) {
       console.warn('⚠️ Callback received for unknown task, creating:', taskId);
@@ -103,18 +108,19 @@ class CallbackStorage {
     console.log('✅ Callback data saved successfully:', taskId);
   }
 
-  // 결과 조회
+  // 결과 조회 (안전하게)
   async getResult(taskId: string): Promise<CallbackData | null> {
-    const { data, error } = await this.supabaseClient
+    const { data: resultArray, error } = await this.supabaseClient
       .from('music_generation_tasks')
       .select('*')
-      .eq('task_id', taskId)
-      .single();
+      .eq('task_id', taskId);
 
     if (error) {
       console.error('❌ Failed to get result:', error);
       return null;
     }
+    
+    const data = resultArray && resultArray.length > 0 ? resultArray[0] : null;
 
     if (!data) return null;
 
