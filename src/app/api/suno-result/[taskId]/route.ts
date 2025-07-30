@@ -19,6 +19,11 @@ export async function GET(
     
     // 1단계: 저장소에서 결과 조회
     let result = await callbackStorage.getResult(taskId);
+    console.log('💾 Storage result:', result ? {
+      status: result.status,
+      hasAudioUrl: !!result.audioUrl,
+      title: result.title
+    } : 'null');
     
     // 2단계: 저장소에 결과가 없으면 Suno API에 직접 상태 확인
     if (!result || result.status === 'pending') {
@@ -29,7 +34,12 @@ export async function GET(
         const sunoStatus = await checkSunoTaskStatusDirect(taskId);
         
         if (sunoStatus) {
-          console.log('📥 Retrieved status from Suno API:', sunoStatus.status);
+          console.log('📥 Retrieved status from Suno API:', {
+            status: sunoStatus.status,
+            hasAudioUrl: !!sunoStatus.audio_url,
+            title: sunoStatus.title,
+            fullResponse: sunoStatus
+          });
           
           // 완료된 경우 저장소에 결과 저장
           if (sunoStatus.status === 'completed' || sunoStatus.status === 'complete') {
@@ -61,14 +71,17 @@ export async function GET(
     if (!result) {
       console.log('❓ No result found for taskId:', taskId);
       
-      return corsResponse({
+      const responseData = {
         success: false,
         data: {
           id: taskId,
           status: 'processing',
           message: 'Music generation in progress...'
         }
-      }, 200, origin || undefined);
+      };
+      console.log('📤 Returning processing response:', responseData);
+      
+      return corsResponse(responseData, 200, origin || undefined);
     }
     
     // 4단계: 상태별 응답 처리

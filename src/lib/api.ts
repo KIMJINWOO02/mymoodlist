@@ -96,7 +96,7 @@ export class ApiService {
 
   // 음악 생성 완료를 위한 폴링 함수
   static async pollForCompletion(taskId: string, prompt: string, duration: number): Promise<MusicGenerationResult> {
-    const maxAttempts = 15; // 최대 15번 시도 (약 3분)
+    const maxAttempts = 8; // 최대 8번 시도로 단축 (약 1.5분)
     const baseInterval = 10000; // 10초 기본 간격
     let pollInterval = baseInterval;
     
@@ -126,6 +126,12 @@ export class ApiService {
           const statusResponse = await pollingApi.get(`/api/suno-result/${taskId}`);
           
           console.log(`📡 Status response:`, statusResponse.data);
+          console.log(`📊 Response details:`, {
+            success: statusResponse.data.success,
+            hasData: !!statusResponse.data.data,
+            dataType: typeof statusResponse.data.data,
+            fullResponse: JSON.stringify(statusResponse.data)
+          });
           
           if (statusResponse.data.success && statusResponse.data.data) {
             const result = statusResponse.data.data;
@@ -148,6 +154,15 @@ export class ApiService {
             
             // processing 상태면 계속 대기
             console.log(`⏳ Still processing... (${result.status || 'unknown'})`);
+          } else if (statusResponse.data.success === false && statusResponse.data.data) {
+            // success: false이지만 data가 있는 경우 (processing 상태)
+            const result = statusResponse.data.data;
+            console.log(`⏳ Processing status detected: ${result.status || 'unknown'}`);
+            
+            if (result.status === 'failed') {
+              console.error('❌ Music generation failed on server');
+              break; // 데모 폴백으로 이동
+            }
           } else {
             console.log('⚠️ No data in response, continuing to poll...');
           }
