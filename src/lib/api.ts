@@ -361,10 +361,11 @@ export class SunoService {
       
       console.log('✅ Suno returned taskId:', actualTaskId);
       
-      // 실제 Suno TaskId로 저장소에 작업 등록
+      // 실제 Suno TaskId로 저장소에 작업 등록 (임시 비활성화)
       try {
-        const { callbackStorage } = await import('@/lib/storage');
-        await callbackStorage.registerTask(actualTaskId);
+        console.log('📝 Storage registration temporarily disabled for debugging');
+        // const { callbackStorage } = await import('@/lib/storage');
+        // await callbackStorage.registerTask(actualTaskId);
       } catch (storageError) {
         console.warn('Storage registration failed:', storageError);
       }
