@@ -5,18 +5,29 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    console.log('🎵 Suno callback received:', body);
-    console.log('📄 Callback data:', JSON.stringify(body, null, 2));
+    console.log('🎵 CALLBACK RECEIVED!!! Suno callback received:', body);
+    console.log('📄 CALLBACK DATA:', JSON.stringify(body, null, 2));
+    console.log('🔍 CALLBACK TaskId extraction attempt...');
     
     // taskId 추출 (여러 가능한 필드에서)
     const taskId = body.taskId || body.task_id || body.id || body.requestId;
     
+    console.log('🔍 Extracted TaskId:', taskId);
+    console.log('🔍 Available fields:', Object.keys(body));
+    console.log('🔍 Possible TaskId fields:', {
+      taskId: body.taskId,
+      task_id: body.task_id, 
+      id: body.id,
+      requestId: body.requestId
+    });
+    
     if (taskId) {
       // 콜백 데이터 저장
       await callbackStorage.saveCallback(taskId, body);
-      console.log('✅ Callback data saved for taskId:', taskId);
+      console.log('✅ CALLBACK SAVED! TaskId:', taskId);
     } else {
-      console.warn('⚠️ No taskId found in callback data');
+      console.error('❌ NO TASKID FOUND! Available keys:', Object.keys(body));
+      console.error('❌ Full body:', body);
     }
     
     return NextResponse.json({
