@@ -16,6 +16,23 @@ export async function GET(request: NextRequest) {
 
     // 특별히 확인할 환경변수들
     const specificCheck = {
+      SUNO_API_KEY: {
+        exists: !!process.env.SUNO_API_KEY,
+        length: process.env.SUNO_API_KEY?.length || 0,
+        prefix: process.env.SUNO_API_KEY?.substring(0, 8) + '...' || 'undefined'
+      },
+      SUNO_API_URL: {
+        raw: process.env.SUNO_API_URL,
+        exists: !!process.env.SUNO_API_URL
+      },
+      GEMINI_API_KEY: {
+        exists: !!process.env.GEMINI_API_KEY,
+        length: process.env.GEMINI_API_KEY?.length || 0
+      },
+      NEXT_PUBLIC_BASE_URL: {
+        raw: process.env.NEXT_PUBLIC_BASE_URL,
+        exists: !!process.env.NEXT_PUBLIC_BASE_URL
+      },
       NEXT_PUBLIC_SUPABASE_URL: {
         raw: process.env.NEXT_PUBLIC_SUPABASE_URL,
         exists: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
