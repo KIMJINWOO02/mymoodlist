@@ -31,6 +31,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('🚀 AuthModal handleSubmit called', { mode, email });
     setError('');
     setSuccess('');
     setIsLoading(true);
@@ -52,15 +53,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           onClose();
         }
       } else if (mode === 'signin') {
+        console.log('🔑 Calling signIn function...');
         await signIn(email, password);
+        console.log('✅ signIn completed, closing modal');
         onClose();
       } else if (mode === 'forgot') {
         await resetPassword(email);
         setSuccess('비밀번호 재설정 링크를 이메일로 발송했습니다.');
       }
     } catch (error: any) {
+      console.error('❌ AuthModal error:', error);
       setError(error.message);
     } finally {
+      console.log('🏁 AuthModal finally block, setting loading to false');
       setIsLoading(false);
     }
   };
