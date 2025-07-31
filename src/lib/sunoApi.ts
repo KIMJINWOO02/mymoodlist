@@ -177,20 +177,21 @@ export async function generateMusic(formData: MusicFormData): Promise<SunoGenera
     
     console.log('✅ Music generation successful:', result);
     
-    return result;
+    // 성공 응답에 success: true 추가
+    return {
+      ...result,
+      success: true
+    };
     
   } catch (error) {
     console.error('❌ Failed to generate music:', error);
     
-    if (error instanceof SunoApiError) {
-      throw error;
-    }
-    
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new SunoApiError('Network error: Unable to connect to Suno API', 0, 'NETWORK_ERROR');
-    }
-    
-    throw new SunoApiError('Unexpected error during music generation', 500, 'UNKNOWN_ERROR');
+    // 에러를 throw하지 않고 에러 응답을 반환
+    return {
+      success: false,
+      error: error instanceof SunoApiError ? error.message : 'Music generation failed',
+      message: error instanceof Error ? error.message : 'Unknown error occurred'
+    };
   }
 }
 
