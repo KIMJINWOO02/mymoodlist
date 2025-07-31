@@ -144,7 +144,7 @@ export async function generateMusic(formData: MusicFormData): Promise<SunoGenera
   try {
     console.log('🎵 Generating music with Suno API:', { prompt, tags });
     
-    const response = await fetch(`${apiUrl}/generate`, {
+    const response = await fetch(`${apiUrl}/api/v1/generate`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
