@@ -55,7 +55,7 @@ export class ApiService {
         formData: formData
       };
 
-      const response = await api.post('/api/music/generate', requestData);
+      const response = await api.post('/api/generate-music-v2', requestData);
       
       if (!response.data.success) {
         throw new ApiError(response.data.error || 'Music generation failed');
