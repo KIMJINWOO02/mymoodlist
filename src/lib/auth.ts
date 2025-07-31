@@ -40,16 +40,23 @@ export class AuthService {
   // 로그인
   static async signIn(email: string, password: string) {
     try {
+      console.log('🔐 AuthService.signIn called with email:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      console.log('📡 Supabase auth response:', { data, error });
 
+      if (error) {
+        console.error('❌ Supabase auth error:', error);
+        throw error;
+      }
+
+      console.log('✅ AuthService.signIn successful, returning data:', data);
       return data;
     } catch (error: any) {
-      console.error('Sign in error:', error);
+      console.error('❌ AuthService.signIn error:', error);
       throw new Error(error.message || '로그인 중 오류가 발생했습니다.');
     }
   }
