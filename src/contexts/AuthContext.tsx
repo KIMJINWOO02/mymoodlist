@@ -89,6 +89,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setLoading(true);
     try {
       const result = await AuthService.signIn(email, password);
+      
+      // 로그인 성공 시 사용자 정보 업데이트
+      if (result && result.user) {
+        setUser(result.user);
+      }
+      
       return result;
     } finally {
       setLoading(false);
