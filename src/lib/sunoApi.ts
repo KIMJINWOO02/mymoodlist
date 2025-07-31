@@ -132,13 +132,14 @@ export async function generateMusic(formData: MusicFormData): Promise<SunoGenera
   const prompt = (formData as any).generatedPrompt || createSunoPrompt(formData);
   const tags = createSunoTags(formData);
   
-  const requestBody: SunoGenerateRequest = {
+  const requestBody = {
     prompt: prompt,
-    make_instrumental: !formData.useCase?.includes('보컬') && !formData.useCase?.includes('가사'),
-    wait_audio: true,
-    model: 'chirp-v3-5', // 최신 모델 사용
-    tags: tags,
-    title: `${formData.mood || 'Generated'} Music`
+    style: "AI Generated",
+    title: `${formData.mood || 'Generated'} Music`,
+    customMode: true,
+    instrumental: !formData.useCase?.includes('보컬') && !formData.useCase?.includes('가사'),
+    model: "V3_5",
+    callBackUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://mymoodlist.com'}/api/suno-callback`
   };
   
   try {
