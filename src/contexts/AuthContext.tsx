@@ -68,6 +68,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // 인증 상태 변경 감지
     const { data: { subscription } } = AuthService.onAuthStateChange((user) => {
+      console.log('🎯 AuthContext callback called with user:', user);
       setUser(user);
       setLoading(false);
     });

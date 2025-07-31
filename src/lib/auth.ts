@@ -158,10 +158,15 @@ export class AuthService {
   // 세션 변경 감지
   static onAuthStateChange(callback: (user: AuthUser | null) => void) {
     return supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔔 Auth state change detected:', event, session?.user?.email);
+      
       if (event === 'SIGNED_IN' && session?.user) {
+        console.log('✅ SIGNED_IN event, getting current user...');
         const user = await this.getCurrentUser();
+        console.log('👤 Calling callback with user:', user);
         callback(user);
       } else if (event === 'SIGNED_OUT') {
+        console.log('👋 SIGNED_OUT event, calling callback with null');
         callback(null);
       }
     });
