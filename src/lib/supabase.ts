@@ -10,11 +10,34 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     detectSessionInUrl: true,
     flowType: 'pkce',
-    debug: false
+    debug: true  // 디버그 모드 활성화
   },
   global: {
     headers: {
       'X-Client-Info': 'music-app@1.0.0'
+    },
+    fetch: (url, options = {}) => {
+      console.log('🌐 Supabase fetch:', url, options.method || 'GET');
+      
+      // 30초 타임아웃 설정
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.error('⏰ Supabase request timeout after 30s:', url);
+        controller.abort();
+      }, 30000);
+      
+      return fetch(url, {
+        ...options,
+        signal: controller.signal
+      }).then(response => {
+        clearTimeout(timeoutId);
+        console.log('✅ Supabase response:', response.status, url);
+        return response;
+      }).catch(error => {
+        clearTimeout(timeoutId);
+        console.error('❌ Supabase fetch error:', error, url);
+        throw error;
+      });
     }
   }
 });
