@@ -91,8 +91,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const result = await AuthService.signIn(email, password);
       
       // 로그인 성공 시 사용자 정보 업데이트
+      console.log('🔍 SignIn result:', result);
       if (result && result.user) {
+        console.log('✅ Setting user from result.user:', result.user);
         setUser(result.user);
+      } else if (result && result.session && result.session.user) {
+        console.log('✅ Setting user from result.session.user:', result.session.user);
+        setUser(result.session.user);
+      } else {
+        console.log('⚠️ No user found in result:', result);
       }
       
       return result;
