@@ -120,11 +120,20 @@ export async function generateMusic(formData: MusicFormData): Promise<SunoGenera
   const apiKey = process.env.SUNO_API_KEY;
   const apiUrl = process.env.SUNO_API_URL;
   
+  console.log('🔍 Suno API Configuration Check:', {
+    hasApiKey: !!apiKey,
+    hasApiUrl: !!apiUrl,
+    apiUrl: apiUrl,
+    keyLength: apiKey?.length || 0
+  });
+  
   if (!apiKey) {
+    console.error('❌ SUNO_API_KEY not configured');
     throw new SunoApiError('Suno API key not configured', 500, 'CONFIG_ERROR');
   }
   
   if (!apiUrl) {
+    console.error('❌ SUNO_API_URL not configured');
     throw new SunoApiError('Suno API URL not configured', 500, 'CONFIG_ERROR');
   }
   
@@ -134,13 +143,22 @@ export async function generateMusic(formData: MusicFormData): Promise<SunoGenera
   
   const requestBody = {
     prompt: prompt,
-    style: "AI Generated",
+    style: tags || "AI Generated",
     title: `${formData.mood || 'Generated'} Music`,
     customMode: true,
     instrumental: !formData.useCase?.includes('보컬') && !formData.useCase?.includes('가사'),
     model: "V3_5",
     callBackUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://mymoodlist.com'}/api/suno-callback`
   };
+  
+  console.log('🎵 Suno API Request:', {
+    url: `${apiUrl}/api/v1/generate`,
+    prompt: prompt.substring(0, 100) + '...',
+    style: requestBody.style,
+    title: requestBody.title,
+    model: requestBody.model,
+    instrumental: requestBody.instrumental
+  });
   
   try {
     console.log('🎵 Generating music with Suno API:', { prompt, tags });
@@ -157,19 +175,24 @@ export async function generateMusic(formData: MusicFormData): Promise<SunoGenera
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ Suno API Error:', response.status, errorText);
+      console.error('❌ Suno API Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorText: errorText,
+        url: `${apiUrl}/api/v1/generate`
+      });
       
       switch (response.status) {
         case 400:
           throw new SunoApiError('Invalid request parameters', 400, 'INVALID_PARAMS');
         case 401:
-          throw new SunoApiError('Invalid API key', 401, 'UNAUTHORIZED');
+          throw new SunoApiError('Invalid API key - Check your SUNO_API_KEY', 401, 'UNAUTHORIZED');
         case 429:
           throw new SunoApiError('Insufficient credits or rate limit exceeded', 429, 'RATE_LIMIT');
         case 500:
           throw new SunoApiError('Suno API server error', 500, 'SERVER_ERROR');
         default:
-          throw new SunoApiError(`Suno API error: ${response.status}`, response.status, 'API_ERROR');
+          throw new SunoApiError(`Suno API error: ${response.status} - ${errorText}`, response.status, 'API_ERROR');
       }
     }
     

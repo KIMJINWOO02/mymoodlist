@@ -46,7 +46,12 @@ export class ApiService {
 
   static async generateMusic(formData: MusicFormData, geminiPrompt: string): Promise<MusicGenerationResult> {
     try {
-      console.log('🎵 Starting music generation request...');
+      console.log('🎵 [API.TS] Starting music generation request with data:', {
+        geminiPrompt: geminiPrompt.substring(0, 100) + '...',
+        duration: formData.duration,
+        mood: formData.mood,
+        genre: formData.genre
+      });
       
       // Gemini 프롬프트와 duration을 함께 전달
       const requestData = {
@@ -55,9 +60,18 @@ export class ApiService {
         formData: formData
       };
 
+      console.log('🎵 [API.TS] Calling /api/generate-music-v2 with:', requestData);
       const response = await api.post('/api/generate-music-v2', requestData);
       
+      console.log('🎵 [API.TS] Response from generate-music-v2:', {
+        success: response.data.success,
+        hasData: !!response.data.data,
+        hasTaskId: !!response.data.taskId,
+        error: response.data.error
+      });
+      
       if (!response.data.success) {
+        console.error('🎵 [API.TS] API returned failure:', response.data.error);
         throw new ApiError(response.data.error || 'Music generation failed');
       }
 
@@ -102,7 +116,8 @@ export class ApiService {
         });
         
         // 데모 폴백 제공
-        console.log('🎭 Providing demo fallback due to unexpected response format');
+        console.error('🎭 DEMO FALLBACK TRIGGERED - Unexpected response format');
+        console.error('🔍 This means Suno API returned success but with unexpected data structure');
         return {
           prompt: geminiPrompt,
           audioUrl: '/api/demo-audio',
