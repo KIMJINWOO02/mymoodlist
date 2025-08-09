@@ -62,13 +62,21 @@ export class ApiService {
       }
 
       // 응답 타입 확인: taskId가 있으면 폴링 시작, 데이터가 있으면 즉시 반환
+      console.log('🔍 Response data structure:', {
+        hasData: !!response.data,
+        hasTaskId: !!response.data?.taskId,
+        hasDataArray: !!response.data?.data,
+        dataType: typeof response.data?.data,
+        fullResponse: JSON.stringify(response.data, null, 2)
+      });
+
       if (response.data.taskId) {
         console.log(`🔄 Music generation started, polling for completion. TaskId: ${response.data.taskId}`);
         
         // 폴링으로 완성 대기
         return await this.pollForCompletion(response.data.taskId, geminiPrompt, formData.duration);
         
-      } else if (response.data.data && response.data.data[0]) {
+      } else if (response.data.data && Array.isArray(response.data.data) && response.data.data[0]) {
         // 즉시 완성된 경우 (데모 또는 캐시된 결과)
         const sunoData = response.data.data[0];
         
@@ -76,13 +84,32 @@ export class ApiService {
         
         return {
           prompt: geminiPrompt,
-          audioUrl: sunoData.audio_url,
-          title: sunoData.title,
+          audioUrl: sunoData.audio_url || sunoData.audioUrl,
+          title: sunoData.title || 'AI Generated Music',
           duration: sunoData.duration || formData.duration,
-          imageUrl: sunoData.image_url
+          imageUrl: sunoData.image_url || sunoData.imageUrl
         };
+      } else if (response.data.success === false && response.data.error) {
+        // API에서 명시적으로 실패를 반환한 경우
+        console.error('❌ API returned explicit failure:', response.data.error);
+        throw new ApiError(response.data.error);
       } else {
-        throw new ApiError('Invalid response format from music generation API');
+        // 예상치 못한 응답 형식 - 더 자세한 로깅 후 폴백 제공
+        console.error('❌ Unexpected response format:', {
+          data: response.data,
+          dataKeys: Object.keys(response.data || {}),
+          dataType: typeof response.data
+        });
+        
+        // 데모 폴백 제공
+        console.log('🎭 Providing demo fallback due to unexpected response format');
+        return {
+          prompt: geminiPrompt,
+          audioUrl: '/api/demo-audio',
+          title: 'Demo Music (API Format Error)',
+          duration: formData.duration || 30,
+          imageUrl: null
+        };
       }
       
     } catch (error: any) {
